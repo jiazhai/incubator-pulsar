@@ -410,7 +410,7 @@ public class PersistentDispatcherMultipleConsumers  extends AbstractDispatcherMu
 
         sendMessagesToConsumers(readType, entries);
 
-        readMoreEntries();
+        //readMoreEntries();
     }
 
     protected void sendMessagesToConsumers(ReadType readType, List<Entry> entries) {

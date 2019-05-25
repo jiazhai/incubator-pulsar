@@ -18,8 +18,13 @@
  */
 package org.apache.pulsar.client.api;
 
+import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.stream.coder.protobuf.test.Proto2CoderTestMessages.MessageA;
 import org.apache.pulsar.broker.service.HashRangeStickyKeyConsumerSelector;
 import org.apache.pulsar.broker.service.persistent.PersistentStickyKeyDispatcherMultipleConsumers;
+import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.common.util.Murmur3_32Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -433,4 +438,101 @@ public class KeySharedSubscriptionTest extends ProducerConsumerBase {
             .ackTimeout(10, TimeUnit.SECONDS)
             .subscribe();
     }
+
+    @Test
+    public void testOrdering() throws Exception {
+        this.conf.setSubscriptionKeySharedEnable(true);
+        String topic = "persistent://public/default/testording";
+
+        // 1. create 2 consumers
+        final AtomicInteger consumer1Received = new AtomicInteger();
+        Consumer<byte[]> consumer1 = pulsarClient.newConsumer()
+            .topic(topic)
+            .subscriptionName("key_shared")
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .ackTimeout(100, TimeUnit.SECONDS)
+            .subscribe();
+
+        final AtomicInteger consumer2Received = new AtomicInteger();
+        Consumer<byte[]> consumer2 = pulsarClient.newConsumer()
+            .topic(topic)
+            .subscriptionName("key_shared")
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .ackTimeout(100, TimeUnit.SECONDS)
+            .subscribe();
+
+        // 2. create producer
+        Producer<byte[]> producer = pulsarClient.newProducer()
+            .topic(topic)
+            .enableBatching(false)
+            .create();
+
+        final int totalSend = 100;
+
+        int keyNumber = 10;
+        List<String> keys = Lists.newArrayList();
+        String baseKey = "103:jz20190522147";
+        for (int i = 0; i < keyNumber; i ++) {
+            keys.add(baseKey + i);
+            log.info("add key {}: {}", i, keys.get(i));
+        }
+
+        for (int i = 0; i < totalSend; i++) {
+            String key = keys.get(i % keyNumber);
+            producer.newMessage()
+                //.key(key)
+                .key("one-key")
+                .value((key + " index:" + i).getBytes())
+                .send();
+
+            log.info("++++++ produce message {} for key: {}", i, keys.get(i % keyNumber));
+        }
+
+        Message<byte[]> message = null;
+        do {
+            message = consumer1.receive(100, TimeUnit.MILLISECONDS);
+            if (message != null) {
+                log.info("------ consumer1 receive: {}. messageid: {}, received messages: {}",
+                    new String(message.getValue()),
+                    message.getMessageId(),
+                    consumer1Received.incrementAndGet());
+                consumer1.acknowledge(message);
+            }
+        } while (message != null);
+
+        do {
+            message = consumer2.receive(100, TimeUnit.MILLISECONDS);
+            if (message != null) {
+                log.info("------ consumer2 receive: {}.  messageid: {},  received messages: {}",
+                    new String(message.getValue()),
+                    message.getMessageId(),
+                    consumer2Received.incrementAndGet());
+                consumer2.acknowledge(message);
+            }
+        } while (message != null);
+
+
+        // 3. wait consumer received all messages.
+        int retry = 20;
+        for (int i = 0; i < retry; i++) {
+            if (consumer2Received.get() + consumer1Received.get() >= totalSend) {
+                break;
+            } else if (i != retry - 1) {
+                Thread.sleep(100);
+            }
+        }
+
+        log.info("total send: {}. total received message: {} + {} = {}",
+            totalSend, consumer1Received.get(), consumer2Received.get(), consumer2Received.get() + consumer1Received.get());
+
+        // 4. sleep 1 s, there should be no messages again.
+        Thread.sleep(1000);
+        log.info("total send: {}. total received message: {} + {} = {}",
+            totalSend, consumer1Received.get(), consumer2Received.get(), consumer2Received.get() + consumer1Received.get());
+
+        consumer1.close();
+        consumer2.close();
+    }
+
+
 }

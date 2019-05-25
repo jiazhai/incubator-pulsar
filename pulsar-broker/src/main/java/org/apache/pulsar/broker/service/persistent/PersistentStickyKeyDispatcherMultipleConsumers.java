@@ -18,16 +18,21 @@
  */
 package org.apache.pulsar.broker.service.persistent;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.mledger.Entry;
 import org.apache.bookkeeper.mledger.ManagedCursor;
+import org.apache.bookkeeper.mledger.util.SafeRun;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.service.BrokerServiceException;
 import org.apache.pulsar.broker.service.Consumer;
@@ -71,14 +76,20 @@ public class PersistentStickyKeyDispatcherMultipleConsumers extends PersistentDi
         long totalMessagesSent = 0;
         long totalBytesSent = 0;
         if (entries.size() > 0) {
-            final Map<byte[], List<Entry>> groupedEntries = entries
-                    .stream()
-                    .collect(Collectors.groupingBy(entry -> peekStickyKey(entry.getDataBuffer()), Collectors.toList()));
-            final Iterator<Map.Entry<byte[], List<Entry>>> iterator = groupedEntries.entrySet().iterator();
+            final Map<String, List<Entry>> groupedEntries = new HashMap<>();
+            entries.forEach(entry -> {
+                String key = new String(peekStickyKey(entry.getDataBuffer()), UTF_8);
+                groupedEntries.putIfAbsent(key, new ArrayList<>());
+                groupedEntries.get(key).add(entry);
+            });
+
+            AtomicInteger keyNumbers = new AtomicInteger(groupedEntries.keySet().size());
+
+            final Iterator<Map.Entry<String, List<Entry>>> iterator = groupedEntries.entrySet().iterator();
             while (iterator.hasNext() && totalAvailablePermits > 0 && isAtleastOneConsumerAvailable()) {
-                final Map.Entry<byte[], List<Entry>> entriesWithSameKey = iterator.next();
+                final Map.Entry<String, List<Entry>> entriesWithSameKey = iterator.next();
                 //TODO: None key policy
-                final Consumer consumer = selector.select(entriesWithSameKey.getKey());
+                final Consumer consumer = selector.select(entriesWithSameKey.getKey().getBytes());
 
                 if (consumer == null) {
                     // Do nothing, cursor will be rewind at reconnection
@@ -103,7 +114,14 @@ public class PersistentStickyKeyDispatcherMultipleConsumers extends PersistentDi
                     filterEntriesForConsumer(subList, batchSizes, sendMessageInfo);
 
                     consumer.sendMessages(subList, batchSizes, sendMessageInfo.getTotalMessages(),
-                            sendMessageInfo.getTotalBytes(), getRedeliveryTracker());
+                            sendMessageInfo.getTotalBytes(), getRedeliveryTracker())
+                        .addListener(future -> {
+                            if (future.isSuccess()) {
+                                if (keyNumbers.decrementAndGet() == 0) {
+                                    readMoreEntries();
+                                }
+                            }
+                        });
                     entriesWithSameKey.getValue().removeAll(subList);
 
                     totalAvailablePermits -= sendMessageInfo.getTotalMessages();
