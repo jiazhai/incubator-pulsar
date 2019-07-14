@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.broker.admin.v2;
 
+import io.swagger.annotations.ApiParam;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -213,11 +214,14 @@ public class Namespaces extends NamespacesBase {
     @GET
     @Path("/{tenant}/{namespace}/replication")
     @ApiOperation(value = "Get the replication clusters for a namespace.", response = String.class, responseContainer = "List")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
             @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
-            @ApiResponse(code = 412, message = "Namespace is not global") })
-    public Set<String> getNamespaceReplicationClusters(@PathParam("tenant") String tenant,
-            @PathParam("namespace") String namespace) {
+            @ApiResponse(code = 412, message = "Namespace is not valid or non-global"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Set<String> getNamespaceReplicationClusters(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace) {
         validateAdminAccessForTenant(tenant);
         validateNamespaceName(tenant, namespace);
 
@@ -227,12 +231,16 @@ public class Namespaces extends NamespacesBase {
     @POST
     @Path("/{tenant}/{namespace}/replication")
     @ApiOperation(value = "Set the replication clusters for a namespace.")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
             @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
             @ApiResponse(code = 409, message = "Peer-cluster can't be part of replication-cluster"),
-            @ApiResponse(code = 412, message = "Namespace is not global or invalid cluster ids") })
-    public void setNamespaceReplicationClusters(@PathParam("tenant") String tenant,
-            @PathParam("namespace") String namespace, List<String> clusterIds) {
+            @ApiResponse(code = 412, message = "Namespace is not global or invalid cluster ids"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public void setNamespaceReplicationClusters(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
+            List<String> clusterIds) {
         validateNamespaceName(tenant, namespace);
         internalSetNamespaceReplicationClusters(clusterIds);
     }
@@ -240,10 +248,14 @@ public class Namespaces extends NamespacesBase {
     @GET
     @Path("/{tenant}/{namespace}/messageTTL")
     @ApiOperation(value = "Get the message TTL for the namespace")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
-            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist") })
-    public int getNamespaceMessageTTL(@PathParam("tenant") String tenant,
-            @PathParam("namespace") String namespace) {
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 412, message = "Namespace is not valid"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public int getNamespaceMessageTTL(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace) {
 
         validateAdminAccessForTenant(tenant);
         validateNamespaceName(tenant, namespace);
@@ -255,11 +267,16 @@ public class Namespaces extends NamespacesBase {
     @POST
     @Path("/{tenant}/{namespace}/messageTTL")
     @ApiOperation(value = "Set message TTL in seconds for namespace")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
             @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
-            @ApiResponse(code = 412, message = "Invalid TTL") })
-    public void setNamespaceMessageTTL(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace,
-            int messageTTL) {
+            @ApiResponse(code = 409, message = "Concurrent modification"),
+            @ApiResponse(code = 412, message = "Invalid value for message TTL"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public void setNamespaceMessageTTL(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
+        int messageTTL) {
         validateNamespaceName(tenant, namespace);
         internalSetNamespaceMessageTTL(messageTTL);
     }
@@ -267,9 +284,14 @@ public class Namespaces extends NamespacesBase {
     @POST
     @Path("/{tenant}/{namespace}/deduplication")
     @ApiOperation(value = "Enable or disable broker side deduplication for all topics in a namespace")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
-            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist") })
-    public void modifyDeduplication(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace,
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 409, message = "Concurrent modification"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public void modifyDeduplication(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
             boolean enableDeduplication) {
         validateNamespaceName(tenant, namespace);
         internalModifyDeduplication(enableDeduplication);
@@ -278,11 +300,13 @@ public class Namespaces extends NamespacesBase {
     @GET
     @Path("/{tenant}/{namespace}/bundles")
     @ApiOperation(value = "Get the bundles split data.")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
-            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
-            @ApiResponse(code = 412, message = "Namespace is not setup to split in bundles") })
-    public BundlesData getBundlesData(@PathParam("tenant") String tenant,
-            @PathParam("namespace") String namespace) {
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+        @ApiResponse(code = 403, message = "Don't have admin permission"),
+        @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+        @ApiResponse(code = 412, message = "Namespace is not setup to split in bundles") })
+    public BundlesData getBundlesData(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace) {
         validateAdminAccessForTenant(tenant);
         validatePoliciesReadOnlyAccess();
         validateNamespaceName(tenant, namespace);
@@ -299,10 +323,14 @@ public class Namespaces extends NamespacesBase {
             + "their persistent store). During that operation, the namespace is marked as tentatively unavailable until the"
             + "broker completes the unloading action. This operation requires strictly super user privileges, since it would"
             + "result in non-persistent message loss and unexpected connection closure to the clients.")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
-            @ApiResponse(code = 404, message = "Tenant or namespace doesn't exist"),
-            @ApiResponse(code = 412, message = "Namespace is already unloaded or Namespace has bundles activated") })
-    public void unloadNamespace(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace) {
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 412, message = "Namespace is already unloaded or Namespace has bundles activated"),
+            @ApiResponse(code = 503, message = "Service Unavailable")})
+    public void unloadNamespace(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace) {
         validateNamespaceName(tenant, namespace);
         internalUnloadNamespace();
     }
@@ -310,10 +338,16 @@ public class Namespaces extends NamespacesBase {
     @PUT
     @Path("/{tenant}/{namespace}/{bundle}/unload")
     @ApiOperation(value = "Unload a namespace bundle")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission") })
-    public void unloadNamespaceBundle(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace,
-            @PathParam("bundle") String bundleRange,
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 503, message = "Service Unavailable") })
+    public void unloadNamespaceBundle(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
+            @ApiParam(value = "Specify the bundle range") @PathParam("bundle") String bundleRange,
             @QueryParam("authoritative") @DefaultValue("false") boolean authoritative) {
+        validateAdminAccessForTenant(tenant);
         validateNamespaceName(tenant, namespace);
         internalUnloadNamespaceBundle(bundleRange, authoritative);
     }
@@ -321,11 +355,18 @@ public class Namespaces extends NamespacesBase {
     @PUT
     @Path("/{tenant}/{namespace}/{bundle}/split")
     @ApiOperation(value = "Split a namespace bundle")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission") })
-    public void splitNamespaceBundle(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace,
-            @PathParam("bundle") String bundleRange,
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 412, message = "Split bundle failed due to invalid request"),
+            @ApiResponse(code = 503, message = "Service Unavailable") })
+    public void splitNamespaceBundle(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
+            @ApiParam(value = "Specify the bundle range") @PathParam("bundle") String bundleRange,
             @QueryParam("authoritative") @DefaultValue("false") boolean authoritative,
             @QueryParam("unload") @DefaultValue("false") boolean unload) {
+        validateAdminAccessForTenant(tenant);
         validateNamespaceName(tenant, namespace);
         internalSplitNamespaceBundle(bundleRange, authoritative, unload);
     }
@@ -333,8 +374,13 @@ public class Namespaces extends NamespacesBase {
     @POST
     @Path("/{tenant}/{namespace}/dispatchRate")
     @ApiOperation(value = "Set dispatch-rate throttling for all topics of the namespace")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission") })
-    public void setDispatchRate(@PathParam("tenant") String tenant, @PathParam("namespace") String namespace,
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist"),
+            @ApiResponse(code = 409, message = "Concurrent modification") })
+    public void setDispatchRate(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace,
             DispatchRate dispatchRate) {
         validateNamespaceName(tenant, namespace);
         internalSetTopicDispatchRate(dispatchRate);
@@ -343,10 +389,13 @@ public class Namespaces extends NamespacesBase {
     @GET
     @Path("/{tenant}/{namespace}/dispatchRate")
     @ApiOperation(value = "Get dispatch-rate configured for the namespace, -1 represents not configured yet")
-    @ApiResponses(value = { @ApiResponse(code = 403, message = "Don't have admin permission"),
-            @ApiResponse(code = 404, message = "Namespace does not exist") })
-    public DispatchRate getDispatchRate(@PathParam("tenant") String tenant,
-            @PathParam("namespace") String namespace) {
+    @ApiResponses(value = { @ApiResponse(code = 401, message = "Proxy not authorized"),
+            @ApiResponse(code = 403, message = "Don't have admin permission"),
+            @ApiResponse(code = 404, message = "Tenant or cluster or namespace doesn't exist") })
+    public DispatchRate getDispatchRate(
+            @ApiParam(value = "Specify the tenant") @PathParam("tenant") String tenant,
+            @ApiParam(value = "Specify the namespace") @PathParam("namespace") String namespace) {
+        validateAdminAccessForTenant(tenant);
         validateNamespaceName(tenant, namespace);
         return internalGetTopicDispatchRate();
     }
