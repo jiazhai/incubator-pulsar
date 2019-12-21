@@ -605,6 +605,10 @@ public class ConsumerImpl<T> extends ConsumerBase<T> implements ConnectionHandle
             resetBackoff();
 
             boolean firstTimeConnect = subscribeFuture.complete(this);
+
+            log.info("[{}][{}] Created consumer {} on cnx {}",
+                topic, subscription, consumerName, cnx.channel().remoteAddress());
+
             // if the consumer is not partitioned or is re-connected and is partitioned, we send the flow
             // command to receive messages.
             // For readers too (isDurable==false), the partition idx will be set though we have to
