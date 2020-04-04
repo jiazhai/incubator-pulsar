@@ -101,12 +101,24 @@ jobs:
 #        if: steps.docs.outputs.changed_only == 'no'
 #        run: mvn test -DfailIfNoTests=false '-Dtest=PersistentDispatcherFailoverConsumerTest' -pl pulsar-broker
 
+      - name: run unit tests pulsar broker PartitionedTopicsSchemaTest
+        if: steps.docs.outputs.changed_only == 'no'
+        run: mvn test -DfailIfNoTests=false '-Dtest=PartitionedTopicsSchemaTest' -pl pulsar-broker
+
+      - name: run unit tests pulsar broker AdminApiTest
+        if: steps.docs.outputs.changed_only == 'no'
+        run: mvn test -DfailIfNoTests=false '-Dtest=AdminApiTest' -pl pulsar-broker
+
+      - name: run unit tests pulsar broker V1_AdminApiTest
+        if: steps.docs.outputs.changed_only == 'no'
+        run: mvn test -DfailIfNoTests=false '-Dtest=V1_AdminApiTest' -pl pulsar-broker
+
       - name: run unit test pulsar-broker
         if: steps.docs.outputs.changed_only == 'no'
         run: |
           df -h
           free -h
-          mvn test -e '-Dtest=!PersistentTransactionBufferTest,!PulsarFunctionE2ESecurityTest,!ServerCnxTest,!AdminApiOffloadTest,!AdminApiSchemaValidationEnforced,!V1_AdminApiTest2,!ProxyPublishConsumeTlsTest,!PulsarFunctionE2ETest,!MessageIdSerialization,!AdminApiTest2,!PulsarFunctionLocalRunTest,!PartitionedProducerConsumerTest,!KafkaProducerSimpleConsumerTest,!MessagePublishThrottlingTest,!ReaderTest,!RackAwareTest,!SimpleProducerConsumerTest,!V1_ProducerConsumerTest,!PersistentFailoverE2ETest,!BrokerClientIntegrationTest,!ReplicatorRateLimiterTest,!PersistentDispatcherFailoverConsumerTest' -DfailIfNoTests=false -pl pulsar-broker
+          mvn test -e '-Dtest=!PartitionedTopicsSchemaTest,!AdminApiTest,!V1_AdminApiTest,!PersistentTransactionBufferTest,!PulsarFunctionE2ESecurityTest,!ServerCnxTest,!AdminApiOffloadTest,!AdminApiSchemaValidationEnforced,!V1_AdminApiTest2,!ProxyPublishConsumeTlsTest,!PulsarFunctionE2ETest,!MessageIdSerialization,!AdminApiTest2,!PulsarFunctionLocalRunTest,!PartitionedProducerConsumerTest,!KafkaProducerSimpleConsumerTest,!MessagePublishThrottlingTest,!ReaderTest,!RackAwareTest,!SimpleProducerConsumerTest,!V1_ProducerConsumerTest,!PersistentFailoverE2ETest,!BrokerClientIntegrationTest,!ReplicatorRateLimiterTest,!PersistentDispatcherFailoverConsumerTest' -DfailIfNoTests=false -pl pulsar-broker
 
       - name: package surefire artifacts
         if: failure()
