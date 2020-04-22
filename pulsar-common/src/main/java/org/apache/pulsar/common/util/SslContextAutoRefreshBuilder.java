@@ -18,16 +18,10 @@
  */
 package org.apache.pulsar.common.util;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Auto refresher and builder of SSLContext.
@@ -35,72 +29,18 @@ import org.slf4j.LoggerFactory;
  * @param <T>
  *            type of SSLContext
  */
+@Slf4j
 public abstract class SslContextAutoRefreshBuilder<T> {
-    protected final boolean tlsAllowInsecureConnection;
-    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
-    protected final Set<String> tlsCiphers;
-    protected final Set<String> tlsProtocols;
-    protected final boolean tlsRequireTrustedClientCertOnConnect;
     protected final long refreshTime;
     protected long lastRefreshTime;
 
-    protected String tlsProvider;
-    protected String tlsKeyStoreType;
-    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
-    protected String tlsTrustStoreType;
-    protected FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
-
-    public SslContextAutoRefreshBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
-            String keyFilePath, Set<String> ciphers, Set<String> protocols, boolean requireTrustedClientCertOnConnect,
-            long certRefreshInSec) throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        this.tlsAllowInsecureConnection = allowInsecure;
-        this.tlsTrustCertsFilePath = new FileModifiedTimeUpdater(trustCertsFilePath);
-        this.tlsCertificateFilePath = new FileModifiedTimeUpdater(certificateFilePath);
-        this.tlsKeyFilePath = new FileModifiedTimeUpdater(keyFilePath);
-        this.tlsCiphers = ciphers;
-        this.tlsProtocols = protocols;
-        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
+    public SslContextAutoRefreshBuilder(
+            long certRefreshInSec) {
         this.refreshTime = TimeUnit.SECONDS.toMillis(certRefreshInSec);
         this.lastRefreshTime = -1;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Certs will be refreshed every {} seconds", certRefreshInSec);
-        }
-    }
-
-    // A constructor for KeyStore type
-    public SslContextAutoRefreshBuilder(String sslProviderString,
-                                        String keyStoreTypeString,
-                                        String keyStore,
-                                        String keyStorePasswordPath,
-                                        boolean allowInsecureConnection,
-                                        String trustStoreTypeString,
-                                        String trustStore,
-                                        String trustStorePasswordPath,
-                                        boolean requireTrustedClientCertOnConnect,
-                                        Set<String> ciphers,
-                                        Set<String> protocols,
-                                        long certRefreshInSec)
-            throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        this.tlsAllowInsecureConnection = allowInsecureConnection;
-        this.tlsProvider = sslProviderString;
-
-        this.tlsKeyStoreType = keyStoreTypeString;
-        this.tlsKeyStore = new FileModifiedTimeUpdater(keyStore);
-        this.tlsKeyStorePasswordPath = new FileModifiedTimeUpdater(keyStorePasswordPath);
-
-        this.tlsTrustStoreType = trustStoreTypeString;
-        this.tlsTrustStore = new FileModifiedTimeUpdater(trustStore);
-        this.tlsTrustStorePasswordPath = new FileModifiedTimeUpdater(trustStorePasswordPath);
-
-        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
-        this.tlsCiphers = ciphers;
-        this.tlsProtocols = protocols;
-        this.refreshTime = TimeUnit.SECONDS.toMillis(certRefreshInSec);
-        this.lastRefreshTime = -1;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Certs will be refreshed every {} seconds", certRefreshInSec);
+        if (log.isDebugEnabled()) {
+            log.debug("Certs will be refreshed every {} seconds", certRefreshInSec);
         }
     }
 
@@ -140,7 +80,7 @@ public abstract class SslContextAutoRefreshBuilder<T> {
                 lastRefreshTime = System.currentTimeMillis();
                 return getSslContext();
             } catch (GeneralSecurityException | IOException e) {
-                LOG.error("Execption while trying to refresh ssl Context {}", e.getMessage(), e);
+                log.error("Exception while trying to refresh ssl Context {}", e.getMessage(), e);
             }
         } else {
             long now = System.currentTimeMillis();
@@ -150,13 +90,11 @@ public abstract class SslContextAutoRefreshBuilder<T> {
                         ctx = update();
                         lastRefreshTime = now;
                     } catch (GeneralSecurityException | IOException e) {
-                        LOG.error("Execption while trying to refresh ssl Context {} ", e.getMessage(), e);
+                        log.error("Exception while trying to refresh ssl Context {} ", e.getMessage(), e);
                     }
                 }
             }
         }
         return ctx;
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(SslContextAutoRefreshBuilder.class);
 }

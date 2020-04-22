@@ -139,7 +139,6 @@ public class AsyncHttpConnector implements Connector {
                                 conf.getTlsProtocols());
                     }
                 } else {
-
                     if (authData.hasDataForTls()) {
                         sslCtx = SecurityUtility.createNettySslContextForClient(
                                 conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),

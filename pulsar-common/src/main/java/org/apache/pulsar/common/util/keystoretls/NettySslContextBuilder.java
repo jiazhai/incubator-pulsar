@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Set;
 import javax.net.ssl.SSLException;
+import org.apache.pulsar.common.util.FileModifiedTimeUpdater;
 import org.apache.pulsar.common.util.SslContextAutoRefreshBuilder;
 
 /**
@@ -31,6 +32,18 @@ import org.apache.pulsar.common.util.SslContextAutoRefreshBuilder;
  */
 public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslContext> {
     private volatile SslContext sslNettyContext;
+
+    protected final boolean tlsAllowInsecureConnection;
+    protected final Set<String> tlsCiphers;
+    protected final Set<String> tlsProtocols;
+    protected final boolean tlsRequireTrustedClientCertOnConnect;
+
+    protected String tlsProvider;
+    protected String tlsKeyStoreType;
+    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
+    protected String tlsTrustStoreType;
+    protected FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
+
 
     public NettySslContextBuilder(String sslProviderString,
                                   String keyStoreTypeString,
@@ -43,12 +56,23 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
                                   boolean requireTrustedClientCertOnConnect,
                                   Set<String> ciphers,
                                   Set<String> protocols,
-                                  long certRefreshInSec)
-            throws SSLException, FileNotFoundException, GeneralSecurityException, IOException  {
-        super(sslProviderString, keyStoreTypeString, keyStore, keyStorePasswordPath,
-                allowInsecureConnection,
-                trustStoreTypeString, trustStore, trustStorePasswordPath, requireTrustedClientCertOnConnect,
-                ciphers, protocols, certRefreshInSec);
+                                  long certRefreshInSec) {
+        super(certRefreshInSec);
+
+        this.tlsAllowInsecureConnection = allowInsecureConnection;
+        this.tlsProvider = sslProviderString;
+
+        this.tlsKeyStoreType = keyStoreTypeString;
+        this.tlsKeyStore = new FileModifiedTimeUpdater(keyStore);
+        this.tlsKeyStorePasswordPath = new FileModifiedTimeUpdater(keyStorePasswordPath);
+
+        this.tlsTrustStoreType = trustStoreTypeString;
+        this.tlsTrustStore = new FileModifiedTimeUpdater(trustStore);
+        this.tlsTrustStorePasswordPath = new FileModifiedTimeUpdater(trustStorePasswordPath);
+
+        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
+        this.tlsCiphers = ciphers;
+        this.tlsProtocols = protocols;
     }
 
     @Override
@@ -70,8 +94,7 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
 
     @Override
     public boolean filesModified() {
-        return  tlsCertificateFilePath.checkAndRefresh()
-                || tlsKeyStore.checkAndRefresh() || tlsKeyStorePasswordPath.checkAndRefresh()
+        return  tlsKeyStore.checkAndRefresh() || tlsKeyStorePasswordPath.checkAndRefresh()
                 || tlsTrustStore.checkAndRefresh() || tlsTrustStorePasswordPath.checkAndRefresh();
     }
 }

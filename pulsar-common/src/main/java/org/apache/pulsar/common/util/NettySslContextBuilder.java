@@ -31,11 +31,23 @@ import javax.net.ssl.SSLException;
 public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslContext> {
     private volatile SslContext sslNettyContext;
 
+    protected final boolean tlsAllowInsecureConnection;
+    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
+    protected final Set<String> tlsCiphers;
+    protected final Set<String> tlsProtocols;
+    protected final boolean tlsRequireTrustedClientCertOnConnect;
+
     public NettySslContextBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
             String keyFilePath, Set<String> ciphers, Set<String> protocols, boolean requireTrustedClientCertOnConnect,
-            long delayInSeconds) throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        super(allowInsecure, trustCertsFilePath, certificateFilePath, keyFilePath, ciphers, protocols,
-                requireTrustedClientCertOnConnect, delayInSeconds);
+            long delayInSeconds) {
+        super(delayInSeconds);
+        this.tlsAllowInsecureConnection = allowInsecure;
+        this.tlsTrustCertsFilePath = new FileModifiedTimeUpdater(trustCertsFilePath);
+        this.tlsCertificateFilePath = new FileModifiedTimeUpdater(certificateFilePath);
+        this.tlsKeyFilePath = new FileModifiedTimeUpdater(keyFilePath);
+        this.tlsCiphers = ciphers;
+        this.tlsProtocols = protocols;
+        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
     }
 
     @Override

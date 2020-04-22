@@ -29,11 +29,19 @@ import javax.net.ssl.SSLException;
 public class DefaultSslContextBuilder extends SslContextAutoRefreshBuilder<SSLContext> {
     private volatile SSLContext sslContext;
 
+    protected final boolean tlsAllowInsecureConnection;
+    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
+    protected final boolean tlsRequireTrustedClientCertOnConnect;
+
     public DefaultSslContextBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
             String keyFilePath, boolean requireTrustedClientCertOnConnect, long certRefreshInSec)
             throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        super(allowInsecure, trustCertsFilePath, certificateFilePath, keyFilePath, null, null,
-                requireTrustedClientCertOnConnect, certRefreshInSec);
+        super(certRefreshInSec);
+        this.tlsAllowInsecureConnection = allowInsecure;
+        this.tlsTrustCertsFilePath = new FileModifiedTimeUpdater(trustCertsFilePath);
+        this.tlsCertificateFilePath = new FileModifiedTimeUpdater(certificateFilePath);
+        this.tlsKeyFilePath = new FileModifiedTimeUpdater(keyFilePath);
+        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
     }
 
     @Override
