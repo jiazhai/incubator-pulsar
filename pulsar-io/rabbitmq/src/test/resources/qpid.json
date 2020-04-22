@@ -9,8 +9,8 @@
       "secureOnlyMechanisms": []
     },
     {
-      "name": "passwordFile",
-      "type": "PlainPasswordFile",
+      "name": "PasswordPath",
+      "type": "PlainPasswordPath",
       "path": "${qpid.home_dir}${file.separator}etc${file.separator}passwd",
       "secureOnlyMechanisms": []
     }
@@ -19,7 +19,7 @@
     {
       "name": "AMQP",
       "port": "${qpid.amqp_port}",
-      "authenticationProvider": "passwordFile",
+      "authenticationProvider": "PasswordPath",
       "protocols": [
         "AMQP_0_9_1"
       ]

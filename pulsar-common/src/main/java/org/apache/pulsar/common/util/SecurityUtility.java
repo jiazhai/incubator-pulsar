@@ -279,6 +279,8 @@ public class SecurityUtility {
         return privateKey;
     }
 
+    // TODO: this is the same as truststore
+    //                     .trustManager(new File(clientConf.getTLSTrustStore()))
     private static void setupTrustCerts(SslContextBuilder builder, boolean allowInsecureConnection,
             String trustCertsFilePath) throws IOException, FileNotFoundException {
         if (allowInsecureConnection) {

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("checkstyle:JavadocType")
+// TODO:
 public class ClientSslContextRefresher {
     private volatile SslContext sslContext;
     private boolean tlsAllowInsecureConnection;

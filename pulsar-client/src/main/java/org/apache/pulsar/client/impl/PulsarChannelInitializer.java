@@ -33,6 +33,7 @@ import org.apache.pulsar.client.util.ObjectCache;
 import org.apache.pulsar.common.protocol.ByteBufPair;
 import org.apache.pulsar.common.protocol.Commands;
 import org.apache.pulsar.common.util.SecurityUtility;
+import org.apache.pulsar.common.util.keystoretls.TlsKeyStoreUtility;
 
 public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -56,6 +57,32 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                 try {
                     // Set client certificate if available
                     AuthenticationDataProvider authData = conf.getAuthentication().getAuthData();
+
+                    if (conf.isUseKeyStoreTls()) {
+                        //if (authData.hasDataForTls()) {
+                            // TODO: how to handle this?
+                            // need verify authdata.certificate with truststore?
+                            //  AuthData get the data from client?
+                            //  Since all the data is configured through client, it is not need to get from authdata?
+                        //} else {
+                            // TODO: not refresh able.
+                            // make server and client use same method to support refesh?
+                            // Here: sslContextSupplier need support refresh
+                            return TlsKeyStoreUtility.createNettySslContextForClient(
+                                    conf.getSslProvider(),
+                                    conf.getTlsTrustCertsFilePath(),
+                                    conf.getTlsKeyStoreType(),
+                                    conf.getTlsKeyStore(),
+                                    conf.getTlsKeyStorePasswordPath(),
+                                    conf.isTlsAllowInsecureConnection(),
+                                    conf.getTlsTrustStoreType(),
+                                    conf.getTlsTrustStore(),
+                                    conf.getTlsTrustStorePasswordPath(),
+                                    conf.getTlsCiphers(),
+                                    conf.getTlsProtocols());
+                        //}
+                    }
+
                     if (authData.hasDataForTls()) {
                         return SecurityUtility.createNettySslContextForClient(conf.isTlsAllowInsecureConnection(),
                                 conf.getTlsTrustCertsFilePath(), (X509Certificate[]) authData.getTlsCertificates(),

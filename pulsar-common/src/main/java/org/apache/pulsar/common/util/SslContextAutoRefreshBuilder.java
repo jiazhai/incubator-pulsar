@@ -37,12 +37,18 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class SslContextAutoRefreshBuilder<T> {
     protected final boolean tlsAllowInsecureConnection;
-    protected final FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
+    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
     protected final Set<String> tlsCiphers;
     protected final Set<String> tlsProtocols;
     protected final boolean tlsRequireTrustedClientCertOnConnect;
     protected final long refreshTime;
     protected long lastRefreshTime;
+
+    protected String tlsProvider;
+    protected String tlsKeyStoreType;
+    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
+    protected String tlsTrustStoreType;
+    protected FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
 
     public SslContextAutoRefreshBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
             String keyFilePath, Set<String> ciphers, Set<String> protocols, boolean requireTrustedClientCertOnConnect,
@@ -54,6 +60,44 @@ public abstract class SslContextAutoRefreshBuilder<T> {
         this.tlsCiphers = ciphers;
         this.tlsProtocols = protocols;
         this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
+        this.refreshTime = TimeUnit.SECONDS.toMillis(certRefreshInSec);
+        this.lastRefreshTime = -1;
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Certs will be refreshed every {} seconds", certRefreshInSec);
+        }
+    }
+
+    // A constructor for KeyStore type
+    public SslContextAutoRefreshBuilder(String sslProviderString,
+                                        String certificatePath,
+                                        String keyStoreTypeString,
+                                        String keyStore,
+                                        String keyStorePasswordPath,
+                                        boolean allowInsecureConnection,
+                                        String trustStoreTypeString,
+                                        String trustStore,
+                                        String trustStorePasswordPath,
+                                        boolean requireTrustedClientCertOnConnect,
+                                        Set<String> ciphers,
+                                        Set<String> protocols,
+                                        long certRefreshInSec)
+            throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
+        this.tlsAllowInsecureConnection = allowInsecureConnection;
+        this.tlsProvider = sslProviderString;
+        this.tlsCertificateFilePath = new FileModifiedTimeUpdater(certificatePath);
+
+        this.tlsKeyStoreType = keyStoreTypeString;
+        this.tlsKeyStore = new FileModifiedTimeUpdater(keyStore);
+        this.tlsKeyStorePasswordPath = new FileModifiedTimeUpdater(keyStorePasswordPath);
+
+        this.tlsTrustStoreType = trustStoreTypeString;
+        this.tlsTrustStore = new FileModifiedTimeUpdater(trustStore);
+        this.tlsTrustStorePasswordPath = new FileModifiedTimeUpdater(trustStorePasswordPath);
+
+        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
+        this.tlsCiphers = ciphers;
+        this.tlsProtocols = protocols;
         this.refreshTime = TimeUnit.SECONDS.toMillis(certRefreshInSec);
         this.lastRefreshTime = -1;
 
@@ -79,6 +123,13 @@ public abstract class SslContextAutoRefreshBuilder<T> {
     protected abstract T getSslContext();
 
     /**
+     * Returns whether the key files modified after a refresh time.
+     *
+     * @return true if files modified
+     */
+    protected abstract boolean filesModified();
+
+    /**
      * It updates SSLContext at every configured refresh time and returns updated SSLContext.
      *
      * @return
@@ -96,8 +147,7 @@ public abstract class SslContextAutoRefreshBuilder<T> {
         } else {
             long now = System.currentTimeMillis();
             if (refreshTime <= 0 || now > (lastRefreshTime + refreshTime)) {
-                if (tlsTrustCertsFilePath.checkAndRefresh() || tlsCertificateFilePath.checkAndRefresh()
-                        || tlsKeyFilePath.checkAndRefresh()) {
+                if (filesModified()) {
                     try {
                         ctx = update();
                         lastRefreshTime = now;

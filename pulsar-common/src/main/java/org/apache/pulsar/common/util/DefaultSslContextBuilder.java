@@ -49,4 +49,10 @@ public class DefaultSslContextBuilder extends SslContextAutoRefreshBuilder<SSLCo
         return this.sslContext;
     }
 
+    @Override
+    public boolean filesModified() {
+        return  tlsTrustCertsFilePath.checkAndRefresh()
+                || tlsCertificateFilePath.checkAndRefresh()
+                || tlsKeyFilePath.checkAndRefresh();
+    }
 }

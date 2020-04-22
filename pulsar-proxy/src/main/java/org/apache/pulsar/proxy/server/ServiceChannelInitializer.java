@@ -30,6 +30,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.ssl.SslContext;
+import org.apache.pulsar.common.util.SslContextAutoRefreshBuilder;
 
 /**
  * Initialize service channel handlers.
@@ -39,7 +40,7 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
 
     public static final String TLS_HANDLER = "tls";
     private final ProxyService proxyService;
-    private final NettySslContextBuilder serverSslCtxRefresher;
+    private final SslContextAutoRefreshBuilder<SslContext> serverSslCtxRefresher;
     private final ClientSslContextRefresher clientSslCtxRefresher;
     private final boolean enableTls;
 
@@ -50,15 +51,34 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
         this.enableTls = enableTls;
 
         if (enableTls) {
-            serverSslCtxRefresher = new NettySslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
-                    serviceConfig.getTlsTrustCertsFilePath(), serviceConfig.getTlsCertificateFilePath(),
-                    serviceConfig.getTlsKeyFilePath(), serviceConfig.getTlsCiphers(), serviceConfig.getTlsProtocols(),
-                    serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
-                    serviceConfig.getTlsCertRefreshCheckDurationSec());
+            if (serviceConfig.isTlsEnabledWithKeyStore()) {
+                serverSslCtxRefresher = new org.apache.pulsar.common.util.keystoretls.NettySslContextBuilder(
+                        serviceConfig.getTlsProvider(),
+                        serviceConfig.getTlsCertificateFilePath(),
+                        serviceConfig.getTlsKeyStoreType(),
+                        serviceConfig.getTlsKeyStore(),
+                        serviceConfig.getTlsKeyStorePasswordPath(),
+                        serviceConfig.isTlsAllowInsecureConnection(),
+                        serviceConfig.getTlsTrustStoreType(),
+                        serviceConfig.getTlsTrustStore(),
+                        serviceConfig.getTlsTrustStorePasswordPath(),
+                        serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
+                        serviceConfig.getTlsCiphers(),
+                        serviceConfig.getTlsProtocols(),
+                        serviceConfig.getTlsCertRefreshCheckDurationSec());
+            } else {
+                serverSslCtxRefresher = new NettySslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
+                        serviceConfig.getTlsTrustCertsFilePath(), serviceConfig.getTlsCertificateFilePath(),
+                        serviceConfig.getTlsKeyFilePath(), serviceConfig.getTlsCiphers(), serviceConfig.getTlsProtocols(),
+                        serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
+                        serviceConfig.getTlsCertRefreshCheckDurationSec());
+            }
         } else {
             this.serverSslCtxRefresher = null;
         }
 
+        // TODO: re-write the refresh code, to make it align with serverSslCtxRefresher
+        //      And then use serviceConfig.getBrokerClientXXX to create client ssl.
         if (serviceConfig.isTlsEnabledWithBroker()) {
             AuthenticationDataProvider authData = null;
 

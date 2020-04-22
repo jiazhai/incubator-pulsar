@@ -38,8 +38,10 @@ import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.PulsarClientException.NotFoundException;
+import org.apache.pulsar.client.impl.conf.ClientConfigurationData;
 import org.apache.pulsar.common.util.ObjectMapperFactory;
 import org.apache.pulsar.common.util.SecurityUtility;
+import org.apache.pulsar.common.util.keystoretls.TlsKeyStoreUtility;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
@@ -59,24 +61,15 @@ public class HttpClient implements Closeable {
     protected final ServiceNameResolver serviceNameResolver;
     protected final Authentication authentication;
 
-    protected HttpClient(String serviceUrl, Authentication authentication,
-            EventLoopGroup eventLoopGroup, boolean tlsAllowInsecureConnection, String tlsTrustCertsFilePath)
-            throws PulsarClientException {
-        this(serviceUrl, authentication, eventLoopGroup, tlsAllowInsecureConnection,
-                tlsTrustCertsFilePath, DEFAULT_CONNECT_TIMEOUT_IN_SECONDS, DEFAULT_READ_TIMEOUT_IN_SECONDS);
-    }
-
-    protected HttpClient(String serviceUrl, Authentication authentication,
-            EventLoopGroup eventLoopGroup, boolean tlsAllowInsecureConnection, String tlsTrustCertsFilePath,
-            int connectTimeoutInSeconds, int readTimeoutInSeconds) throws PulsarClientException {
-        this.authentication = authentication;
+    protected HttpClient(ClientConfigurationData conf, EventLoopGroup eventLoopGroup) throws PulsarClientException {
+        this.authentication = conf.getAuthentication();
         this.serviceNameResolver = new PulsarServiceNameResolver();
-        this.serviceNameResolver.updateServiceUrl(serviceUrl);
+        this.serviceNameResolver.updateServiceUrl(conf.getServiceUrl());
 
         DefaultAsyncHttpClientConfig.Builder confBuilder = new DefaultAsyncHttpClientConfig.Builder();
         confBuilder.setFollowRedirect(true);
-        confBuilder.setConnectTimeout(connectTimeoutInSeconds * 1000);
-        confBuilder.setReadTimeout(readTimeoutInSeconds * 1000);
+        confBuilder.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT_IN_SECONDS * 1000);
+        confBuilder.setReadTimeout(DEFAULT_READ_TIMEOUT_IN_SECONDS * 1000);
         confBuilder.setUserAgent(String.format("Pulsar-Java-v%s", PulsarVersion.getVersion()));
         confBuilder.setKeepAliveStrategy(new DefaultKeepAliveStrategy() {
             @Override
@@ -92,15 +85,47 @@ public class HttpClient implements Closeable {
 
                 // Set client key and certificate if available
                 AuthenticationDataProvider authData = authentication.getAuthData();
-                if (authData.hasDataForTls()) {
-                    sslCtx = SecurityUtility.createNettySslContextForClient(tlsAllowInsecureConnection, tlsTrustCertsFilePath,
-                            authData.getTlsCertificates(), authData.getTlsPrivateKey());
-                } else {
-                    sslCtx = SecurityUtility.createNettySslContextForClient(tlsAllowInsecureConnection, tlsTrustCertsFilePath);
+                if (conf.isUseKeyStoreTls()) {
+                    //if (authData.hasDataForTls()) {
+                        // TODO: how to handle this?
+                        // need verify authdata.certificate with truststore?
+                        //  AuthData get the data from client?
+                        //  Since all the data is configured through client, it is not need to get from authdata?
+                    //} else {
+                        // TODO: not refresh able.
+                        // make server and client use same method to support refesh?
+                        // Here: sslContextSupplier need support refresh
+                    sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
+                                conf.getSslProvider(),
+                                conf.getTlsTrustCertsFilePath(),
+                                conf.getTlsKeyStoreType(),
+                                conf.getTlsKeyStore(),
+                                conf.getTlsKeyStorePasswordPath(),
+                                conf.isTlsAllowInsecureConnection(),
+                                conf.getTlsTrustStoreType(),
+                                conf.getTlsTrustStore(),
+                                conf.getTlsTrustStorePasswordPath(),
+                                conf.getTlsCiphers(),
+                                conf.getTlsProtocols());
+                }
+
+                else {
+                    if (authData.hasDataForTls()) {
+                        sslCtx = SecurityUtility.createNettySslContextForClient(
+                                conf.isTlsAllowInsecureConnection(),
+                                conf.getTlsTrustCertsFilePath(),
+                                authData.getTlsCertificates(),
+                                authData.getTlsPrivateKey());
+                    }
+                    else {
+                        sslCtx = SecurityUtility.createNettySslContextForClient(
+                                conf.isTlsAllowInsecureConnection(),
+                                conf.getTlsTrustCertsFilePath());
+                    }
                 }
 
                 confBuilder.setSslContext(sslCtx);
-                confBuilder.setUseInsecureTrustManager(tlsAllowInsecureConnection);
+                confBuilder.setUseInsecureTrustManager(conf.isTlsAllowInsecureConnection());
             } catch (Exception e) {
                 throw new PulsarClientException.InvalidConfigurationException(e);
             }
@@ -109,7 +134,7 @@ public class HttpClient implements Closeable {
         AsyncHttpClientConfig config = confBuilder.build();
         httpClient = new DefaultAsyncHttpClient(config);
 
-        log.debug("Using HTTP url: {}", serviceUrl);
+        log.debug("Using HTTP url: {}", conf.getServiceUrl());
     }
 
     String getServiceUrl() {

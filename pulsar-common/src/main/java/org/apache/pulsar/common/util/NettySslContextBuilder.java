@@ -52,4 +52,10 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
         return this.sslNettyContext;
     }
 
+    @Override
+    public boolean filesModified() {
+        return  tlsTrustCertsFilePath.checkAndRefresh()
+                || tlsCertificateFilePath.checkAndRefresh()
+                || tlsKeyFilePath.checkAndRefresh();
+    }
 }

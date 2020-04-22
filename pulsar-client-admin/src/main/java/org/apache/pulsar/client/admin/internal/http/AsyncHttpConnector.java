@@ -53,6 +53,7 @@ import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.client.impl.PulsarServiceNameResolver;
 import org.apache.pulsar.client.impl.conf.ClientConfigurationData;
 import org.apache.pulsar.common.util.SecurityUtility;
+import org.apache.pulsar.common.util.keystoretls.TlsKeyStoreUtility;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.DefaultAsyncHttpClient;
@@ -114,16 +115,44 @@ public class AsyncHttpConnector implements Connector {
 
                 // Set client key and certificate if available
                 AuthenticationDataProvider authData = conf.getAuthentication().getAuthData();
-                if (authData.hasDataForTls()) {
-                    sslCtx = SecurityUtility.createNettySslContextForClient(
-                            conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),
-                            conf.getTlsTrustCertsFilePath(),
-                            authData.getTlsCertificates(),
-                            authData.getTlsPrivateKey());
+
+                if (conf.isUseKeyStoreTls()) {
+                    if (authData.hasDataForTls()) {
+                        // TODO: how to handle this?
+                        // need verify authdata.certificate with truststore?
+                        //  AuthData get the data from client?
+                        //  Since all the data is configured through client, it is not need to get from authdata?
+                    } else {
+                        // TODO: not refresh able.
+                        // make server and client use same method to support refesh?
+                        // Here: sslContextSupplier need support refresh
+                        sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
+                                conf.getSslProvider(),
+                                conf.getTlsTrustCertsFilePath(),
+                                conf.getTlsKeyStoreType(),
+                                conf.getTlsKeyStore(),
+                                conf.getTlsKeyStorePasswordPath(),
+                                conf.isTlsAllowInsecureConnection(),
+                                conf.getTlsTrustStoreType(),
+                                conf.getTlsTrustStore(),
+                                conf.getTlsTrustStorePasswordPath(),
+                                conf.getTlsCiphers(),
+                                conf.getTlsProtocols());
+                    }
                 } else {
-                    sslCtx = SecurityUtility.createNettySslContextForClient(
-                            conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),
-                            conf.getTlsTrustCertsFilePath());
+
+                    if (authData.hasDataForTls()) {
+                        sslCtx = SecurityUtility.createNettySslContextForClient(
+                                conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),
+                                conf.getTlsTrustCertsFilePath(),
+                                authData.getTlsCertificates(),
+                                authData.getTlsPrivateKey());
+                    }
+                    else {
+                        sslCtx = SecurityUtility.createNettySslContextForClient(
+                                conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),
+                                conf.getTlsTrustCertsFilePath());
+                    }
                 }
 
                 confBuilder.setSslContext(sslCtx);
