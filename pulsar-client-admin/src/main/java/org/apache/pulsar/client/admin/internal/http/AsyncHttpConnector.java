@@ -128,7 +128,6 @@ public class AsyncHttpConnector implements Connector {
                         // Here: sslContextSupplier need support refresh
                         sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
                                 conf.getSslProvider(),
-                                conf.getTlsTrustCertsFilePath(),
                                 conf.getTlsKeyStoreType(),
                                 conf.getTlsKeyStore(),
                                 conf.getTlsKeyStorePasswordPath(),

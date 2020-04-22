@@ -18,54 +18,50 @@
  */
 package org.apache.pulsar.common.util.keystoretls;
 
-import io.netty.handler.ssl.SslContext;
+import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Set;
 import javax.net.ssl.SSLException;
 import org.apache.pulsar.common.util.SslContextAutoRefreshBuilder;
 
 /**
- * SSL context builder for Netty.
+ * Similar to `DefaultSslContextBuilder`, which build `javax.net.ssl.SSLContext` for web service.
  */
-public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslContext> {
-    private volatile SslContext sslNettyContext;
+public class NetSslContextBuilder extends SslContextAutoRefreshBuilder<SSLContext> {
+    private volatile SSLContext sslContext;
 
-    public NettySslContextBuilder(String sslProviderString,
-                                  String keyStoreTypeString,
-                                  String keyStore,
-                                  String keyStorePasswordPath,
-                                  boolean allowInsecureConnection,
-                                  String trustStoreTypeString,
-                                  String trustStore,
-                                  String trustStorePasswordPath,
-                                  boolean requireTrustedClientCertOnConnect,
-                                  Set<String> ciphers,
-                                  Set<String> protocols,
-                                  long certRefreshInSec)
+    public NetSslContextBuilder(String sslProviderString,
+                                String keyStoreTypeString,
+                                String keyStore,
+                                String keyStorePasswordPath,
+                                boolean allowInsecureConnection,
+                                String trustStoreTypeString,
+                                String trustStore,
+                                String trustStorePasswordPath,
+                                boolean requireTrustedClientCertOnConnect,
+                                long certRefreshInSec)
             throws SSLException, FileNotFoundException, GeneralSecurityException, IOException  {
         super(sslProviderString, keyStoreTypeString, keyStore, keyStorePasswordPath,
                 allowInsecureConnection,
                 trustStoreTypeString, trustStore, trustStorePasswordPath, requireTrustedClientCertOnConnect,
-                ciphers, protocols, certRefreshInSec);
+                null, null, certRefreshInSec);
     }
 
     @Override
-    public synchronized SslContext update()
+    public synchronized SSLContext update()
             throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        this.sslNettyContext = TlsKeyStoreUtility
-                .createNettySslContextForServer(tlsProvider,
+        this.sslContext = TlsKeyStoreUtility
+                .createSslContext(tlsProvider,
                         tlsKeyStoreType, tlsKeyStore.getFileName(), tlsKeyStorePasswordPath.getFileName(),
                         tlsAllowInsecureConnection,
-                        tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName(),
-                        tlsRequireTrustedClientCertOnConnect, tlsCiphers, tlsProtocols);
-        return this.sslNettyContext;
+                        tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName());
+        return this.sslContext;
     }
 
     @Override
-    public SslContext getSslContext() {
-        return this.sslNettyContext;
+    public SSLContext getSslContext() {
+        return this.sslContext;
     }
 
     @Override

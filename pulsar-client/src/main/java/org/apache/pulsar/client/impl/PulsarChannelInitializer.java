@@ -70,7 +70,6 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                             // Here: sslContextSupplier need support refresh
                             return TlsKeyStoreUtility.createNettySslContextForClient(
                                     conf.getSslProvider(),
-                                    conf.getTlsTrustCertsFilePath(),
                                     conf.getTlsKeyStoreType(),
                                     conf.getTlsKeyStore(),
                                     conf.getTlsKeyStorePasswordPath(),

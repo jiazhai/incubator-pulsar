@@ -70,7 +70,6 @@ public abstract class SslContextAutoRefreshBuilder<T> {
 
     // A constructor for KeyStore type
     public SslContextAutoRefreshBuilder(String sslProviderString,
-                                        String certificatePath,
                                         String keyStoreTypeString,
                                         String keyStore,
                                         String keyStorePasswordPath,
@@ -85,7 +84,6 @@ public abstract class SslContextAutoRefreshBuilder<T> {
             throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
         this.tlsAllowInsecureConnection = allowInsecureConnection;
         this.tlsProvider = sslProviderString;
-        this.tlsCertificateFilePath = new FileModifiedTimeUpdater(certificatePath);
 
         this.tlsKeyStoreType = keyStoreTypeString;
         this.tlsKeyStore = new FileModifiedTimeUpdater(keyStore);

@@ -54,7 +54,6 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
             if (serviceConfig.isTlsEnabledWithKeyStore()) {
                 serverSslCtxRefresher = new org.apache.pulsar.common.util.keystoretls.NettySslContextBuilder(
                         serviceConfig.getTlsProvider(),
-                        serviceConfig.getTlsCertificateFilePath(),
                         serviceConfig.getTlsKeyStoreType(),
                         serviceConfig.getTlsKeyStore(),
                         serviceConfig.getTlsKeyStorePasswordPath(),

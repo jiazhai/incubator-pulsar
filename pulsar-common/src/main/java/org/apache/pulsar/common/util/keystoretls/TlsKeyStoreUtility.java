@@ -33,15 +33,20 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Set;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 /**
  * Helper class for the security domain.
@@ -55,7 +60,7 @@ public class TlsKeyStoreUtility {
     public enum KeyStoreType {
         PKCS12("PKCS12"),
         JKS("JKS"),
-        PEM("PEM");
+        PEM("PEM"); // TODO: remove this. Use PEMImporter to support old behavior.
 
         private String str;
 
@@ -168,17 +173,7 @@ public class TlsKeyStoreUtility {
         }
     }
 
-    //  allowInsecureConnection == > getTLSClientAuthentication
-    //  keyPassword = getPasswordFromFile(serverConf.getTLSKeyStorePasswordPath());
-    //    if (Strings.isNullOrEmpty(serverConf.getTLSKeyStore())) {
-    //        throw new SecurityException("Key path is required");
-    //    }
-    //
-    //                if (Strings.isNullOrEmpty(serverConf.getTLSCertificatePath())) {
-    //        throw new SecurityException("Certificate path is required");
-    //    }
     public static SslContext createNettySslContextForServer(String sslProviderString,
-                                                            String certificatePath,
                                                             String keyStoreTypeString,
                                                             String keyStore,
                                                             String keyStorePasswordPath,
@@ -189,23 +184,12 @@ public class TlsKeyStoreUtility {
                                                             boolean requireTrustedClientCertOnConnect,
                                                             Set<String> ciphers,
                                                             Set<String> protocols)
-            throws GeneralSecurityException, SSLException, FileNotFoundException, IOException {
+            throws GeneralSecurityException, IOException {
         SslContextBuilder sslContextBuilder;
         SslProvider sslProvider = getTLSProvider(sslProviderString);
         KeyStoreType keyStoreType = KeyStoreType.valueOf(keyStoreTypeString);
 
         switch (keyStoreType) {
-            case PEM:
-                sslContextBuilder = SslContextBuilder
-                        .forServer(new File(certificatePath),
-                                new File(keyStore),
-                                getPasswordFromFile(keyStorePasswordPath))
-                        .sessionCacheSize(0)
-                        .sessionTimeout(0)
-                        .sslProvider(sslProvider)
-                        .startTls(true);
-
-                break;
             case JKS:
                 // falling thru, same as PKCS12
             case PKCS12:
@@ -237,12 +221,6 @@ public class TlsKeyStoreUtility {
             KeyStoreType trustStoreType = KeyStoreType.valueOf(trustStoreTypeString);
 
             switch (trustStoreType) {
-                case PEM:
-                    if (Strings.isNullOrEmpty(trustStore)) {
-                        throw new SecurityException("CA Certificate chain is required");
-                    }
-                    sslContextBuilder.trustManager(new File(trustStore));
-                    break;
                 case JKS:
                     // falling thru, same as PKCS12
                 case PKCS12:
@@ -262,7 +240,6 @@ public class TlsKeyStoreUtility {
 
 
     public static SslContext createNettySslContextForClient(String sslProviderString,
-                                                            String certificatePath,
                                                             String keyStoreTypeString,
                                                             String keyStore,
                                                             String keyStorePasswordPath,
@@ -272,7 +249,7 @@ public class TlsKeyStoreUtility {
                                                             String trustStorePasswordPath,
                                                             Set<String> ciphers,
                                                             Set<String> protocols)
-            throws GeneralSecurityException, SSLException, FileNotFoundException, IOException {
+            throws GeneralSecurityException, IOException {
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
         SslProvider sslProvider = getTLSProvider(sslProviderString);
         KeyStoreType trustStoreType = KeyStoreType.valueOf(trustStoreTypeString);
@@ -281,14 +258,6 @@ public class TlsKeyStoreUtility {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
         } else {
             switch (trustStoreType) {
-                case PEM:
-                    sslContextBuilder.trustManager(new File(trustStore))
-                            .sessionCacheSize(0)
-                            .sessionTimeout(0)
-                            .sslProvider(sslProvider)
-                            .clientAuth(ClientAuth.REQUIRE);
-
-                    break;
                 case JKS:
                     // falling thru, same as PKCS12
                 case PKCS12:
@@ -308,27 +277,6 @@ public class TlsKeyStoreUtility {
 
         KeyStoreType keyStoreType = KeyStoreType.valueOf(keyStoreTypeString);
         switch (keyStoreType) {
-            case PEM:
-                String keyPassword;
-
-                if (Strings.isNullOrEmpty(certificatePath)) {
-                    throw new SecurityException("Valid Certificate is missing");
-                }
-
-                if (Strings.isNullOrEmpty(keyStore)) {
-                    throw new SecurityException("Valid Key is missing");
-                }
-
-                if (!Strings.isNullOrEmpty(keyStorePasswordPath)) {
-                    keyPassword = getPasswordFromFile(keyStorePasswordPath);
-                } else {
-                    keyPassword = null;
-                }
-
-                sslContextBuilder.keyManager(new File(certificatePath),
-                        new File(keyStore), keyPassword);
-
-                break;
             case JKS:
                 // falling thru, same as PKCS12
             case PKCS12:
@@ -347,6 +295,122 @@ public class TlsKeyStoreUtility {
     }
 
 
+    // for web service. autoRefresh is default true.
+    public static SslContextFactory createSslContextFactory(String sslProviderString,
+                                                            String keyStoreTypeString,
+                                                            String keyStore,
+                                                            String keyStorePasswordPath,
+                                                            boolean allowInsecureConnection,
+                                                            String trustStoreTypeString,
+                                                            String trustStore,
+                                                            String trustStorePasswordPath,
+                                                            boolean requireTrustedClientCertOnConnect,
+                                                            long certRefreshInSec)
+            throws GeneralSecurityException, SSLException, FileNotFoundException, IOException {
+        SslContextFactory sslCtxFactory;
+
+        sslCtxFactory = new SslContextFactoryWithAutoRefresh(
+                sslProviderString,
+                keyStoreTypeString,
+                keyStore,
+                keyStorePasswordPath,
+                allowInsecureConnection,
+                trustStoreTypeString,
+                trustStore,
+                trustStorePasswordPath,
+                requireTrustedClientCertOnConnect,
+                certRefreshInSec);
+        if (requireTrustedClientCertOnConnect) {
+            sslCtxFactory.setNeedClientAuth(true);
+        } else {
+            sslCtxFactory.setWantClientAuth(true);
+        }
+        sslCtxFactory.setTrustAll(true);
+        return sslCtxFactory;
+    }
+
+    public static SSLContext createSslContext(String sslProviderString,
+                                              String keyStoreTypeString,
+                                              String keyStore,
+                                              String keyStorePasswordPath,
+                                              boolean allowInsecureConnection,
+                                              String trustStoreTypeString,
+                                              String trustStore,
+                                              String trustStorePasswordPath)
+            throws GeneralSecurityException, IOException{
+        SSLContext sslCtx = SSLContext.getInstance("TLS", sslProviderString);
+
+        KeyStoreType keyStoreType = KeyStoreType.valueOf(keyStoreTypeString);
+        KeyManagerFactory kmf;
+        switch (keyStoreType) {
+            case JKS:
+                // falling thru, same as PKCS12
+            case PKCS12:
+                kmf = initKeyManagerFactory(keyStoreTypeString,
+                        keyStore,
+                        keyStorePasswordPath);
+                break;
+            default:
+                throw new SecurityException("Invalid Keyfile type: " + keyStoreTypeString);
+        }
+        KeyManager[] keyManagers = kmf.getKeyManagers();
+
+        TrustManagerFactory tmf;
+        if (allowInsecureConnection) {
+            tmf = (InsecureTrustManagerFactory.INSTANCE);
+        } else {
+            KeyStoreType trustStoreType = KeyStoreType.valueOf(trustStoreTypeString);
+            switch (trustStoreType) {
+                case JKS:
+                    // falling thru, same as PKCS12
+                case PKCS12:
+                    tmf = initTrustManagerFactory(trustStoreTypeString,
+                            trustStore, trustStorePasswordPath);
+                    break;
+                default:
+                    throw new SecurityException("Invalid Truststore type: " + trustStore);
+            }
+        }
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+
+        sslCtx.init(keyManagers, trustManagers, new SecureRandom());
+        sslCtx.getDefaultSSLParameters();
+        return sslCtx;
+    }
+
+    static class SslContextFactoryWithAutoRefresh extends SslContextFactory {
+        private final NetSslContextBuilder sslCtxRefresher;
+
+        public SslContextFactoryWithAutoRefresh(String sslProviderString,
+                                                String keyStoreTypeString,
+                                                String keyStore,
+                                                String keyStorePasswordPath,
+                                                boolean allowInsecureConnection,
+                                                String trustStoreTypeString,
+                                                String trustStore,
+                                                String trustStorePasswordPath,
+                                                boolean requireTrustedClientCertOnConnect,
+                                                long certRefreshInSec)
+                throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
+            super();
+            sslCtxRefresher = new NetSslContextBuilder(
+                    sslProviderString,
+                    keyStoreTypeString,
+                    keyStore,
+                    keyStorePasswordPath,
+                    allowInsecureConnection,
+                    trustStoreTypeString,
+                    trustStore,
+                    trustStorePasswordPath,
+                    requireTrustedClientCertOnConnect,
+                    certRefreshInSec);
+        }
+
+        @Override
+        public SSLContext getSslContext() {
+            return sslCtxRefresher.get();
+        }
+    }
 
 
 }

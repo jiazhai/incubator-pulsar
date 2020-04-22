@@ -97,7 +97,6 @@ public class HttpClient implements Closeable {
                         // Here: sslContextSupplier need support refresh
                     sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
                                 conf.getSslProvider(),
-                                conf.getTlsTrustCertsFilePath(),
                                 conf.getTlsKeyStoreType(),
                                 conf.getTlsKeyStore(),
                                 conf.getTlsKeyStorePasswordPath(),
@@ -107,9 +106,7 @@ public class HttpClient implements Closeable {
                                 conf.getTlsTrustStorePasswordPath(),
                                 conf.getTlsCiphers(),
                                 conf.getTlsProtocols());
-                }
-
-                else {
+                } else {
                     if (authData.hasDataForTls()) {
                         sslCtx = SecurityUtility.createNettySslContextForClient(
                                 conf.isTlsAllowInsecureConnection(),
