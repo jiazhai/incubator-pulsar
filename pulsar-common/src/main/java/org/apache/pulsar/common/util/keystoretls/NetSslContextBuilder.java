@@ -35,11 +35,11 @@ public class NetSslContextBuilder extends SslContextAutoRefreshBuilder<SSLContex
     protected final boolean tlsAllowInsecureConnection;
     protected final boolean tlsRequireTrustedClientCertOnConnect;
 
-    protected String tlsProvider;
-    protected String tlsKeyStoreType;
-    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
-    protected String tlsTrustStoreType;
-    protected FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
+    protected final String tlsProvider;
+    protected final String tlsKeyStoreType;
+    protected final FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
+    protected final String tlsTrustStoreType;
+    protected final FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
 
     public NetSslContextBuilder(String sslProviderString,
                                 String keyStoreTypeString,
@@ -83,7 +83,7 @@ public class NetSslContextBuilder extends SslContextAutoRefreshBuilder<SSLContex
     }
 
     @Override
-    public boolean filesModified() {
+    public boolean needUpdate() {
         return  tlsKeyStore.checkAndRefresh() || tlsKeyStorePasswordPath.checkAndRefresh()
                 || tlsTrustStore.checkAndRefresh() || tlsTrustStorePasswordPath.checkAndRefresh();
     }

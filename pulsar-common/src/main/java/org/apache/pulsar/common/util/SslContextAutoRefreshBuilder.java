@@ -61,11 +61,11 @@ public abstract class SslContextAutoRefreshBuilder<T> {
     protected abstract T getSslContext();
 
     /**
-     * Returns whether the key files modified after a refresh time.
+     * Returns whether the key files modified after a refresh time, and context need update.
      *
      * @return true if files modified
      */
-    protected abstract boolean filesModified();
+    protected abstract boolean needUpdate();
 
     /**
      * It updates SSLContext at every configured refresh time and returns updated SSLContext.
@@ -85,7 +85,7 @@ public abstract class SslContextAutoRefreshBuilder<T> {
         } else {
             long now = System.currentTimeMillis();
             if (refreshTime <= 0 || now > (lastRefreshTime + refreshTime)) {
-                if (filesModified()) {
+                if (needUpdate()) {
                     try {
                         ctx = update();
                         lastRefreshTime = now;

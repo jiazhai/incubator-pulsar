@@ -26,20 +26,21 @@ import java.util.Set;
 import javax.net.ssl.SSLException;
 
 /**
- * SSL context builder for Netty.
+ * SSL context builder for Netty Server side.
  */
-public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslContext> {
+public class NettyServerSslContextBuilder extends SslContextAutoRefreshBuilder<SslContext> {
     private volatile SslContext sslNettyContext;
 
     protected final boolean tlsAllowInsecureConnection;
-    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
+    protected final FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
     protected final Set<String> tlsCiphers;
     protected final Set<String> tlsProtocols;
     protected final boolean tlsRequireTrustedClientCertOnConnect;
 
-    public NettySslContextBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
-            String keyFilePath, Set<String> ciphers, Set<String> protocols, boolean requireTrustedClientCertOnConnect,
-            long delayInSeconds) {
+    public NettyServerSslContextBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
+                                        String keyFilePath, Set<String> ciphers, Set<String> protocols,
+                                        boolean requireTrustedClientCertOnConnect,
+                                        long delayInSeconds) {
         super(delayInSeconds);
         this.tlsAllowInsecureConnection = allowInsecure;
         this.tlsTrustCertsFilePath = new FileModifiedTimeUpdater(trustCertsFilePath);
@@ -65,7 +66,7 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
     }
 
     @Override
-    public boolean filesModified() {
+    public boolean needUpdate() {
         return  tlsTrustCertsFilePath.checkAndRefresh()
                 || tlsCertificateFilePath.checkAndRefresh()
                 || tlsKeyFilePath.checkAndRefresh();

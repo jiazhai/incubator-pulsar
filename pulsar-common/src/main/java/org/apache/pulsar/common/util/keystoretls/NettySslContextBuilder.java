@@ -38,12 +38,13 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
     protected final Set<String> tlsProtocols;
     protected final boolean tlsRequireTrustedClientCertOnConnect;
 
-    protected String tlsProvider;
-    protected String tlsKeyStoreType;
-    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
-    protected String tlsTrustStoreType;
-    protected FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
+    protected final String tlsProvider;
+    protected final String tlsKeyStoreType;
+    protected final FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
+    protected final String tlsTrustStoreType;
+    protected final FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
 
+    protected final boolean isServer;
 
     public NettySslContextBuilder(String sslProviderString,
                                   String keyStoreTypeString,
@@ -56,7 +57,8 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
                                   boolean requireTrustedClientCertOnConnect,
                                   Set<String> ciphers,
                                   Set<String> protocols,
-                                  long certRefreshInSec) {
+                                  long certRefreshInSec,
+                                  boolean isServer) {
         super(certRefreshInSec);
 
         this.tlsAllowInsecureConnection = allowInsecureConnection;
@@ -73,17 +75,28 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
         this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
         this.tlsCiphers = ciphers;
         this.tlsProtocols = protocols;
+
+        this.isServer = isServer;
     }
 
     @Override
     public synchronized SslContext update()
             throws SSLException, FileNotFoundException, GeneralSecurityException, IOException {
-        this.sslNettyContext = TlsKeyStoreUtility
-                .createNettySslContextForServer(tlsProvider,
-                        tlsKeyStoreType, tlsKeyStore.getFileName(), tlsKeyStorePasswordPath.getFileName(),
-                        tlsAllowInsecureConnection,
-                        tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName(),
-                        tlsRequireTrustedClientCertOnConnect, tlsCiphers, tlsProtocols);
+        if (isServer) {
+            this.sslNettyContext = TlsKeyStoreUtility
+                    .createNettySslContextForServer(tlsProvider,
+                            tlsKeyStoreType, tlsKeyStore.getFileName(), tlsKeyStorePasswordPath.getFileName(),
+                            tlsAllowInsecureConnection,
+                            tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName(),
+                            tlsRequireTrustedClientCertOnConnect, tlsCiphers, tlsProtocols);
+        } else {
+            this.sslNettyContext = TlsKeyStoreUtility
+                    .createNettySslContextForClient(tlsProvider,
+                            tlsKeyStoreType, tlsKeyStore.getFileName(), tlsKeyStorePasswordPath.getFileName(),
+                            tlsAllowInsecureConnection,
+                            tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName(),
+                            tlsCiphers, tlsProtocols);
+        }
         return this.sslNettyContext;
     }
 
@@ -93,7 +106,7 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
     }
 
     @Override
-    public boolean filesModified() {
+    public boolean needUpdate() {
         return  tlsKeyStore.checkAndRefresh() || tlsKeyStorePasswordPath.checkAndRefresh()
                 || tlsTrustStore.checkAndRefresh() || tlsTrustStorePasswordPath.checkAndRefresh();
     }

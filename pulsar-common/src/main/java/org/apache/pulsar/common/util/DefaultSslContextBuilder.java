@@ -30,7 +30,7 @@ public class DefaultSslContextBuilder extends SslContextAutoRefreshBuilder<SSLCo
     private volatile SSLContext sslContext;
 
     protected final boolean tlsAllowInsecureConnection;
-    protected FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
+    protected final FileModifiedTimeUpdater tlsTrustCertsFilePath, tlsCertificateFilePath, tlsKeyFilePath;
     protected final boolean tlsRequireTrustedClientCertOnConnect;
 
     public DefaultSslContextBuilder(boolean allowInsecure, String trustCertsFilePath, String certificateFilePath,
@@ -58,7 +58,7 @@ public class DefaultSslContextBuilder extends SslContextAutoRefreshBuilder<SSLCo
     }
 
     @Override
-    public boolean filesModified() {
+    public boolean needUpdate() {
         return  tlsTrustCertsFilePath.checkAndRefresh()
                 || tlsCertificateFilePath.checkAndRefresh()
                 || tlsKeyFilePath.checkAndRefresh();

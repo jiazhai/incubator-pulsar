@@ -123,9 +123,6 @@ public class AsyncHttpConnector implements Connector {
                         //  AuthData get the data from client?
                         //  Since all the data is configured through client, it is not need to get from authdata?
                     } else {
-                        // TODO: not refresh able.
-                        // make server and client use same method to support refesh?
-                        // Here: sslContextSupplier need support refresh
                         sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
                                 conf.getSslProvider(),
                                 conf.getTlsKeyStoreType(),
@@ -145,8 +142,7 @@ public class AsyncHttpConnector implements Connector {
                                 conf.getTlsTrustCertsFilePath(),
                                 authData.getTlsCertificates(),
                                 authData.getTlsPrivateKey());
-                    }
-                    else {
+                    } else {
                         sslCtx = SecurityUtility.createNettySslContextForClient(
                                 conf.isTlsAllowInsecureConnection() || !conf.isTlsHostnameVerificationEnable(),
                                 conf.getTlsTrustCertsFilePath());

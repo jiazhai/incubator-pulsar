@@ -28,7 +28,7 @@ import org.apache.pulsar.broker.PulsarService;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.common.protocol.ByteBufPair;
 import org.apache.pulsar.common.protocol.Commands;
-import org.apache.pulsar.common.util.NettySslContextBuilder;
+import org.apache.pulsar.common.util.NettyServerSslContextBuilder;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -83,9 +83,10 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                         serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
                         serviceConfig.getTlsCiphers(),
                         serviceConfig.getTlsProtocols(),
-                        serviceConfig.getTlsCertRefreshCheckDurationSec());
+                        serviceConfig.getTlsCertRefreshCheckDurationSec(),
+                        true);
             } else {
-                sslCtxRefresher = new NettySslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
+                sslCtxRefresher = new NettyServerSslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
                         serviceConfig.getTlsTrustCertsFilePath(), serviceConfig.getTlsCertificateFilePath(),
                         serviceConfig.getTlsKeyFilePath(), serviceConfig.getTlsCiphers(), serviceConfig.getTlsProtocols(),
                         serviceConfig.isTlsRequireTrustedClientCertOnConnect(),

@@ -54,7 +54,8 @@ import org.apache.pulsar.common.util.KeyStoreHolder;
  */
 public class PEMImporter {
 
-    public static SSLContext createSSLContext(File privateKeyPem, File certificatePem, String password) throws Exception {
+    public static SSLContext createSSLContext(File privateKeyPem, File certificatePem, String password)
+            throws Exception {
         final SSLContext context = SSLContext.getInstance("TLS");
         final KeyStore keystore = createKeyStore(privateKeyPem, certificatePem, password);
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -107,11 +108,11 @@ public class PEMImporter {
     }
 
     /**
-     * Create a KeyStore from standard PEM files
+     * Create a KeyStore from standard PEM files.
      *
      * @param privateKeyPem the private key PEM file
      * @param certificatePem the certificate(s) PEM file
-     * @param the password to set to protect the private key
+     * @param password the password to set to protect the private key
      */
     public static KeyStore createKeyStore(File privateKeyPem, File certificatePem, final String password)
             throws Exception, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
@@ -174,13 +175,15 @@ public class PEMImporter {
         return result.toArray(new X509Certificate[result.size()]);
     }
 
-    private static RSAPrivateKey generatePrivateKeyFromDER(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException {
+    private static RSAPrivateKey generatePrivateKeyFromDER(byte[] keyBytes)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
         final PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         final KeyFactory factory = KeyFactory.getInstance("RSA");
         return (RSAPrivateKey) factory.generatePrivate(spec);
     }
 
-    private static X509Certificate generateCertificateFromDER(byte[] certBytes) throws CertificateException {
+    private static X509Certificate generateCertificateFromDER(byte[] certBytes)
+            throws CertificateException {
         final CertificateFactory factory = CertificateFactory.getInstance("X.509");
         return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
     }

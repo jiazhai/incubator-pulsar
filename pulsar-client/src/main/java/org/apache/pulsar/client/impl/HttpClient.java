@@ -92,9 +92,6 @@ public class HttpClient implements Closeable {
                         //  AuthData get the data from client?
                         //  Since all the data is configured through client, it is not need to get from authdata?
                     //} else {
-                        // TODO: not refresh able.
-                        // make server and client use same method to support refesh?
-                        // Here: sslContextSupplier need support refresh
                     sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
                                 conf.getSslProvider(),
                                 conf.getTlsKeyStoreType(),
