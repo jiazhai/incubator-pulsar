@@ -86,23 +86,15 @@ public class HttpClient implements Closeable {
                 // Set client key and certificate if available
                 AuthenticationDataProvider authData = authentication.getAuthData();
                 if (conf.isUseKeyStoreTls()) {
-                    //if (authData.hasDataForTls()) {
-                        // TODO: how to handle this?
-                        // need verify authdata.certificate with truststore?
-                        //  AuthData get the data from client?
-                        //  Since all the data is configured through client, it is not need to get from authdata?
-                    //} else {
                     sslCtx = TlsKeyStoreUtility.createNettySslContextForClient(
-                                conf.getSslProvider(),
-                                conf.getTlsKeyStoreType(),
-                                conf.getTlsKeyStore(),
-                                conf.getTlsKeyStorePasswordPath(),
-                                conf.isTlsAllowInsecureConnection(),
-                                conf.getTlsTrustStoreType(),
-                                conf.getTlsTrustStore(),
-                                conf.getTlsTrustStorePasswordPath(),
-                                conf.getTlsCiphers(),
-                                conf.getTlsProtocols());
+                            conf.getSslProvider(),
+                            conf.isTlsAllowInsecureConnection(),
+                            conf.getTlsTrustStoreType(),
+                            conf.getTlsTrustStore(),
+                            conf.getTlsTrustStorePasswordPath(),
+                            conf.getTlsCiphers(),
+                            conf.getTlsProtocols(),
+                            authData.hasDataForTls() ? authData.getTlsKeyManagerFactory() : null);
                 } else {
                     if (authData.hasDataForTls()) {
                         sslCtx = SecurityUtility.createNettySslContextForClient(

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.pulsar.client.api.PulsarClientException.UnsupportedAuthenticationException;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Interface of authentication providers.
@@ -71,7 +72,9 @@ public interface Authentication extends Closeable, Serializable {
      *             integrated into this interface.
      */
     @Deprecated
-    void configure(Map<String, String> authParams);
+    default void configure(Map<String, String> authParams) {
+        throw new NotImplementedException();
+    }
 
     /**
      * Initialize the authentication provider.

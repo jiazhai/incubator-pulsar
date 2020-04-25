@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.naming.AuthenticationException;
 
+import javax.net.ssl.KeyManagerFactory;
 import org.apache.pulsar.common.api.AuthData;
 
 /**
@@ -60,6 +61,15 @@ public interface AuthenticationDataProvider extends Serializable {
      * @return a private key for the client certificate, or null if the data are not available
      */
     default PrivateKey getTlsPrivateKey() {
+        return null;
+    }
+
+    /**
+     * Used for TLS authentication with keystore type.
+     *
+     * @return a KeyManagerFactory for the client certificate chain, or null if the data are not available
+     */
+    default KeyManagerFactory getTlsKeyManagerFactory() {
         return null;
     }
 

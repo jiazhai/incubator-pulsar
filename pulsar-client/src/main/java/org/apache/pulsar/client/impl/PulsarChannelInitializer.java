@@ -59,24 +59,15 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                     AuthenticationDataProvider authData = conf.getAuthentication().getAuthData();
 
                     if (conf.isUseKeyStoreTls()) {
-                        //if (authData.hasDataForTls()) {
-                            // TODO: how to handle this?
-                            // need verify authdata.certificate with truststore?
-                            //  AuthData get the data from client?
-                            //  Since all the data is configured through client, it is not need to get from authdata?
-                        //} else {
-                            return TlsKeyStoreUtility.createNettySslContextForClient(
-                                    conf.getSslProvider(),
-                                    conf.getTlsKeyStoreType(),
-                                    conf.getTlsKeyStore(),
-                                    conf.getTlsKeyStorePasswordPath(),
-                                    conf.isTlsAllowInsecureConnection(),
-                                    conf.getTlsTrustStoreType(),
-                                    conf.getTlsTrustStore(),
-                                    conf.getTlsTrustStorePasswordPath(),
-                                    conf.getTlsCiphers(),
-                                    conf.getTlsProtocols());
-                        //}
+                        return TlsKeyStoreUtility.createNettySslContextForClient(
+                                conf.getSslProvider(),
+                                conf.isTlsAllowInsecureConnection(),
+                                conf.getTlsTrustStoreType(),
+                                conf.getTlsTrustStore(),
+                                conf.getTlsTrustStorePasswordPath(),
+                                conf.getTlsCiphers(),
+                                conf.getTlsProtocols(),
+                                authData.hasDataForTls() ? authData.getTlsKeyManagerFactory() : null);
                     }
 
                     if (authData.hasDataForTls()) {

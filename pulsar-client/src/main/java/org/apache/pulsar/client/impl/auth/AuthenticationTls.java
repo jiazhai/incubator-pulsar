@@ -37,7 +37,7 @@ import com.google.common.annotations.VisibleForTesting;
  *
  */
 public class AuthenticationTls implements Authentication, EncodedAuthenticationParameterSupport {
-
+    private final static String AUTH_NAME = "tls";
     private static final long serialVersionUID = 1L;
 
     private String certFilePath;
@@ -58,7 +58,7 @@ public class AuthenticationTls implements Authentication, EncodedAuthenticationP
 
     @Override
     public String getAuthMethodName() {
-        return "tls";
+        return AUTH_NAME;
     }
 
     @Override

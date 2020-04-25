@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Set;
 import javax.net.ssl.SSLException;
+import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.common.util.FileModifiedTimeUpdater;
 import org.apache.pulsar.common.util.SslContextAutoRefreshBuilder;
 
@@ -39,13 +40,17 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
     protected final boolean tlsRequireTrustedClientCertOnConnect;
 
     protected final String tlsProvider;
-    protected final String tlsKeyStoreType;
-    protected final FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
     protected final String tlsTrustStoreType;
     protected final FileModifiedTimeUpdater tlsTrustStore, tlsTrustStorePasswordPath;
 
+    // client context not need keystore at start time, keyStore is passed in by authData.
+    protected String tlsKeyStoreType;
+    protected FileModifiedTimeUpdater tlsKeyStore, tlsKeyStorePasswordPath;
+
+    protected AuthenticationDataProvider authData;
     protected final boolean isServer;
 
+    // for server
     public NettySslContextBuilder(String sslProviderString,
                                   String keyStoreTypeString,
                                   String keyStore,
@@ -57,8 +62,7 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
                                   boolean requireTrustedClientCertOnConnect,
                                   Set<String> ciphers,
                                   Set<String> protocols,
-                                  long certRefreshInSec,
-                                  boolean isServer) {
+                                  long certRefreshInSec) {
         super(certRefreshInSec);
 
         this.tlsAllowInsecureConnection = allowInsecureConnection;
@@ -76,7 +80,36 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
         this.tlsCiphers = ciphers;
         this.tlsProtocols = protocols;
 
-        this.isServer = isServer;
+        this.isServer = true;
+    }
+
+    // for client
+    public NettySslContextBuilder(String sslProviderString,
+                                  boolean allowInsecureConnection,
+                                  String trustStoreTypeString,
+                                  String trustStore,
+                                  String trustStorePasswordPath,
+                                  boolean requireTrustedClientCertOnConnect,
+                                  Set<String> ciphers,
+                                  Set<String> protocols,
+                                  long certRefreshInSec,
+                                  AuthenticationDataProvider authData) {
+        super(certRefreshInSec);
+
+        this.tlsAllowInsecureConnection = allowInsecureConnection;
+        this.tlsProvider = sslProviderString;
+
+        this.authData = authData;
+
+        this.tlsTrustStoreType = trustStoreTypeString;
+        this.tlsTrustStore = new FileModifiedTimeUpdater(trustStore);
+        this.tlsTrustStorePasswordPath = new FileModifiedTimeUpdater(trustStorePasswordPath);
+
+        this.tlsRequireTrustedClientCertOnConnect = requireTrustedClientCertOnConnect;
+        this.tlsCiphers = ciphers;
+        this.tlsProtocols = protocols;
+
+        this.isServer = false;
     }
 
     @Override
@@ -92,10 +125,10 @@ public class NettySslContextBuilder extends SslContextAutoRefreshBuilder<SslCont
         } else {
             this.sslNettyContext = TlsKeyStoreUtility
                     .createNettySslContextForClient(tlsProvider,
-                            tlsKeyStoreType, tlsKeyStore.getFileName(), tlsKeyStorePasswordPath.getFileName(),
                             tlsAllowInsecureConnection,
                             tlsTrustStoreType, tlsTrustStore.getFileName(), tlsTrustStorePasswordPath.getFileName(),
-                            tlsCiphers, tlsProtocols);
+                            tlsCiphers, tlsProtocols,
+                            authData.getTlsKeyManagerFactory());
         }
         return this.sslNettyContext;
     }

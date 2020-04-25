@@ -64,8 +64,7 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
                         serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
                         serviceConfig.getTlsCiphers(),
                         serviceConfig.getTlsProtocols(),
-                        serviceConfig.getTlsCertRefreshCheckDurationSec(),
-                        true);
+                        serviceConfig.getTlsCertRefreshCheckDurationSec());
             } else {
                 serverSslCtxRefresher = new NettyServerSslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
                         serviceConfig.getTlsTrustCertsFilePath(), serviceConfig.getTlsCertificateFilePath(),
@@ -88,9 +87,6 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
             if (serviceConfig.isTlsEnabledWithKeyStore()) {
                 clientSslCtxRefresher = new org.apache.pulsar.common.util.keystoretls.NettySslContextBuilder(
                         serviceConfig.getBrokerClientSslProvider(),
-                        serviceConfig.getBrokerClientTlsKeyStoreType(),
-                        serviceConfig.getBrokerClientTlsKeyStore(),
-                        serviceConfig.getBrokerClientTlsKeyStorePasswordPath(),
                         serviceConfig.isTlsAllowInsecureConnection(),
                         serviceConfig.getBrokerClientTlsTrustStoreType(),
                         serviceConfig.getBrokerClientTlsTrustStore(),
@@ -99,7 +95,7 @@ public class ServiceChannelInitializer extends ChannelInitializer<SocketChannel>
                         serviceConfig.getBrokerClientTlsCiphers(),
                         serviceConfig.getBrokerClientTlsProtocols(),
                         serviceConfig.getTlsCertRefreshCheckDurationSec(),
-                        false);
+                        authData);
             } else {
                 clientSslCtxRefresher = new NettyClientSslContextRefresher(
                         serviceConfig.isTlsAllowInsecureConnection(),

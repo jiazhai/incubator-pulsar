@@ -102,7 +102,7 @@ public class TlsKeyStoreUtility {
         return new String(pwd, "UTF-8");
     }
 
-    private static KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
+    public static KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore ks = KeyStore.getInstance(keyStoreType);
 
@@ -112,9 +112,9 @@ public class TlsKeyStoreUtility {
         return ks;
     }
 
-    private static KeyManagerFactory initKeyManagerFactory(String keyStoreType,
-                                                           String keyStoreLocation,
-                                                           String keyStorePasswordPath)
+    public static KeyManagerFactory initKeyManagerFactory(String keyStoreType,
+                                                          String keyStoreLocation,
+                                                          String keyStorePasswordPath)
             throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException, InvalidKeySpecException {
         KeyManagerFactory kmf = null;
@@ -240,15 +240,13 @@ public class TlsKeyStoreUtility {
 
 
     public static SslContext createNettySslContextForClient(String sslProviderString,
-                                                            String keyStoreTypeString,
-                                                            String keyStore,
-                                                            String keyStorePasswordPath,
                                                             boolean allowInsecureConnection,
                                                             String trustStoreTypeString,
                                                             String trustStore,
                                                             String trustStorePasswordPath,
                                                             Set<String> ciphers,
-                                                            Set<String> protocols)
+                                                            Set<String> protocols,
+                                                            KeyManagerFactory kmf)
             throws GeneralSecurityException, IOException {
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
         SslProvider sslProvider = getTLSProvider(sslProviderString);
@@ -271,22 +269,12 @@ public class TlsKeyStoreUtility {
 
                     break;
                 default:
-                    throw new SecurityException("Invalid Keyfile type: " + keyStoreTypeString);
+                    throw new SecurityException("Invalid Keyfile type: " + trustStoreType);
             }
         }
 
-        KeyStoreType keyStoreType = KeyStoreType.valueOf(keyStoreTypeString);
-        switch (keyStoreType) {
-            case JKS:
-                // falling thru, same as PKCS12
-            case PKCS12:
-                KeyManagerFactory kmf = initKeyManagerFactory(keyStoreTypeString,
-                        keyStore, keyStorePasswordPath);
-
-                sslContextBuilder.keyManager(kmf);
-                break;
-            default:
-                throw new SecurityException("Invalid Truststore type: " + trustStore);
+        if (kmf != null) {
+            sslContextBuilder.keyManager(kmf);
         }
 
         setupCiphers(sslContextBuilder, ciphers);

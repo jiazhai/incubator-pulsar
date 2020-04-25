@@ -83,8 +83,7 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                         serviceConfig.isTlsRequireTrustedClientCertOnConnect(),
                         serviceConfig.getTlsCiphers(),
                         serviceConfig.getTlsProtocols(),
-                        serviceConfig.getTlsCertRefreshCheckDurationSec(),
-                        true);
+                        serviceConfig.getTlsCertRefreshCheckDurationSec());
             } else {
                 sslCtxRefresher = new NettyServerSslContextBuilder(serviceConfig.isTlsAllowInsecureConnection(),
                         serviceConfig.getTlsTrustCertsFilePath(), serviceConfig.getTlsCertificateFilePath(),

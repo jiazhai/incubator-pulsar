@@ -75,10 +75,6 @@ public class ClientConfigurationData implements Serializable, Cloneable {
     // set TLS using KeyStore way.
     private boolean useKeyStoreTls = false;
     private String sslProvider = "OpenSSL";
-    private String tlsCertificateFilePath = null;
-    private String tlsKeyStoreType = "JKS";
-    private String tlsKeyStore = null;
-    private String tlsKeyStorePasswordPath = null;
     // needed when client auth is required
     private String tlsTrustStoreType = "JKS";
     private String tlsTrustStore = null;
