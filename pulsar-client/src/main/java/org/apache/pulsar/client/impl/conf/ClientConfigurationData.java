@@ -74,10 +74,11 @@ public class ClientConfigurationData implements Serializable, Cloneable {
 
     // set TLS using KeyStore way.
     private boolean useKeyStoreTls = false;
-    private String sslProvider = "OpenSSL";
+    //private String sslProvider = "OpenSSL";
+    private String sslProvider = "JDK";
     // needed when client auth is required
     private String tlsTrustStoreType = "JKS";
-    private String tlsTrustStore = null;
+    private String tlsTrustStorePath = null;
     private String tlsTrustStorePasswordPath = null;
     private Set<String> tlsCiphers = Sets.newTreeSet();
     private Set<String> tlsProtocols = Sets.newTreeSet();

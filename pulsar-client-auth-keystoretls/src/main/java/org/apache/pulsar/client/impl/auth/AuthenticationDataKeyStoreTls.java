@@ -65,6 +65,8 @@ public class AuthenticationDataKeyStoreTls implements AuthenticationDataProvider
                         keyStorePath.getFileName(), keyStorePasswordPath.getFileName(), e);
             }
         }
+        log.info("++++ keyManagers.length: {}",
+                keyManagerFactory.getKeyManagers().length);
         return this.keyManagerFactory;
     }
 }

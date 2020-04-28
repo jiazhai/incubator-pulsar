@@ -18,7 +18,9 @@
  */
 package org.apache.pulsar.client.impl;
 
+import io.netty.handler.ssl.SslHandler;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -27,6 +29,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.ssl.SslContext;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.client.impl.conf.ClientConfigurationData;
 import org.apache.pulsar.client.util.ObjectCache;
@@ -35,6 +38,7 @@ import org.apache.pulsar.common.protocol.Commands;
 import org.apache.pulsar.common.util.SecurityUtility;
 import org.apache.pulsar.common.util.keystoretls.TlsKeyStoreUtility;
 
+@Slf4j
 public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     public static final String TLS_HANDLER = "tls";
@@ -43,6 +47,8 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
     private final boolean tlsEnabled;
 
     private final Supplier<SslContext> sslContextSupplier;
+
+    ClientConfigurationData config;
 
     private static final long TLS_CERTIFICATE_CACHE_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
@@ -58,12 +64,14 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
                     // Set client certificate if available
                     AuthenticationDataProvider authData = conf.getAuthentication().getAuthData();
 
+                    log.info("++++ authdata: {}, {}, {}",
+                            authData, authData.hasDataForTls(), authData.getTlsKeyManagerFactory());
                     if (conf.isUseKeyStoreTls()) {
                         return TlsKeyStoreUtility.createNettySslContextForClient(
                                 conf.getSslProvider(),
                                 conf.isTlsAllowInsecureConnection(),
                                 conf.getTlsTrustStoreType(),
-                                conf.getTlsTrustStore(),
+                                conf.getTlsTrustStorePath(),
                                 conf.getTlsTrustStorePasswordPath(),
                                 conf.getTlsCiphers(),
                                 conf.getTlsProtocols(),
@@ -85,6 +93,7 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
         } else {
             sslContextSupplier = null;
         }
+        this.config = conf;
     }
 
     @Override

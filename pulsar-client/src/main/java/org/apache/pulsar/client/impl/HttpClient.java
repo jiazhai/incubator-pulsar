@@ -90,7 +90,7 @@ public class HttpClient implements Closeable {
                             conf.getSslProvider(),
                             conf.isTlsAllowInsecureConnection(),
                             conf.getTlsTrustStoreType(),
-                            conf.getTlsTrustStore(),
+                            conf.getTlsTrustStorePath(),
                             conf.getTlsTrustStorePasswordPath(),
                             conf.getTlsCiphers(),
                             conf.getTlsProtocols(),

@@ -107,7 +107,7 @@ public class ServiceConfig implements PulsarConfiguration {
     // Enable TLS with KeyStore type configuration in broker
     private boolean tlsEnabledWithKeyStore = false;
     // TLS Provider (JDK or OpenSSL)
-    private String tlsProvider = "OpenSSL";
+    private String tlsProvider = "JDK";
     // TLS KeyStore type configuration in broker: PEM, JKS, PKCS12
     private String tlsKeyStoreType = "JKS";
     // TLS KeyStore path in broker

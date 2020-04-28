@@ -20,6 +20,7 @@ package org.apache.pulsar.client.api;
 
 import java.time.Clock;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.pulsar.client.api.PulsarClientException.UnsupportedAuthenticationException;
 
@@ -288,6 +289,20 @@ public interface ClientBuilder extends Cloneable {
      * @return the client builder instance
      */
     ClientBuilder enableTlsHostnameVerification(boolean enableTlsHostnameVerification);
+
+    ClientBuilder useKeyStoreTls(boolean useKeyStoreTls);
+
+    ClientBuilder sslProvider(String sslProvider);
+
+    ClientBuilder tlsTrustStoreType(String tlsTrustStoreType);
+
+    ClientBuilder tlsTrustStorePath(String tlsTrustStorePath);
+
+    ClientBuilder tlsTrustStorePasswordPath(String tlsTrustStorePasswordPath);
+
+    ClientBuilder tlsCiphers(Set<String> tlsCiphers);
+
+    ClientBuilder tlsProtocols(Set<String> tlsProtocols);
 
     /**
      * Set the interval between each stat info <i>(default: 60 seconds)</i> Stats will be activated with positive

@@ -345,7 +345,7 @@ public class ProxyConfiguration implements PulsarConfiguration {
             category = CATEGORY_KEYSTORE_TLS,
             doc = "TLS Provider (JDK or OpenSSL)"
     )
-    private String tlsProvider = "OpenSSL";
+    private String tlsProvider = "JDK";
 
     @FieldContext(
             category = CATEGORY_KEYSTORE_TLS,
@@ -388,7 +388,7 @@ public class ProxyConfiguration implements PulsarConfiguration {
             category = CATEGORY_KEYSTORE_TLS,
             doc = "The TLS Provider (JDK or OpenSSL) used by the Pulsar proxy to authenticate with Pulsar brokers"
     )
-    private String brokerClientSslProvider = "OpenSSL";
+    private String brokerClientSslProvider = "JDK";
     @FieldContext(
             category = CATEGORY_KEYSTORE_TLS,
             doc = "TLS KeyStore type configuration for proxy: PEM, JKS, PKCS12,"

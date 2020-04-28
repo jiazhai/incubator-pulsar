@@ -1493,7 +1493,7 @@ public class ServiceConfiguration implements PulsarConfiguration {
             category = CATEGORY_KEYSTORE_TLS,
             doc = "TLS Provider (JDK or OpenSSL)"
     )
-    private String tlsProvider = "OpenSSL";
+    private String tlsProvider = "JDK";
 
     @FieldContext(
             category = CATEGORY_KEYSTORE_TLS,

@@ -19,6 +19,7 @@
 package org.apache.pulsar.client.admin;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.client.api.Authentication;
@@ -169,6 +170,20 @@ public interface PulsarAdminBuilder {
      * @param enableTlsHostnameVerification
      */
     PulsarAdminBuilder enableTlsHostnameVerification(boolean enableTlsHostnameVerification);
+
+    PulsarAdminBuilder useKeyStoreTls(boolean useKeyStoreTls);
+
+    PulsarAdminBuilder sslProvider(String sslProvider);
+
+    PulsarAdminBuilder tlsTrustStoreType(String tlsTrustStoreType);
+
+    PulsarAdminBuilder tlsTrustStorePath(String tlsTrustStorePath);
+
+    PulsarAdminBuilder tlsTrustStorePasswordPath(String tlsTrustStorePasswordPath);
+
+    PulsarAdminBuilder tlsCiphers(Set<String> tlsCiphers);
+
+    PulsarAdminBuilder tlsProtocols(Set<String> tlsProtocols);
 
     /**
      * This sets the connection time out for the pulsar admin client.

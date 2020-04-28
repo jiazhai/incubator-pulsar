@@ -21,7 +21,9 @@ package org.apache.pulsar.broker.service;
 import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.broker.PulsarService;
@@ -104,7 +106,24 @@ public class PulsarChannelInitializer extends ChannelInitializer<SocketChannel> 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         if (this.enableTls) {
-            ch.pipeline().addLast(TLS_HANDLER, sslCtxRefresher.get().newHandler(ch.alloc()));
+            SslHandler sslHandler = sslCtxRefresher.get().newHandler(ch.alloc());
+//            if (brokerConf.getTlsCiphers().size() > 0) {
+//                sslHandler.engine()
+//                        .setEnabledCipherSuites(brokerConf.getTlsCiphers()
+//                                .toArray(new String[brokerConf.getTlsCiphers().size()]));
+//                log.error("+++++ server ciphers: {}",
+//                        Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+//            }
+//
+//            if (brokerConf.getTlsProtocols().size() > 0) {
+//                sslHandler.engine()
+//                        .setEnabledProtocols(brokerConf.getTlsProtocols()
+//                                .toArray(new String[brokerConf.getTlsProtocols().size()]));
+//                log.error("+++++ server protocols: {}",
+//                        Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+//            }
+
+            ch.pipeline().addLast(TLS_HANDLER, sslHandler);
             ch.pipeline().addLast("ByteBufPairEncoder", ByteBufPair.COPYING_ENCODER);
         } else {
             ch.pipeline().addLast("ByteBufPairEncoder", ByteBufPair.ENCODER);
