@@ -108,6 +108,7 @@ public class PersistentDispatcherFailoverConsumerTest {
     final String successTopicName = "persistent://part-perf/global/perf.t1/ptopic";
     final String failTopicName = "persistent://part-perf/global/perf.t1/pfailTopic";
 
+
     @BeforeMethod
     public void setup() throws Exception {
         ServiceConfiguration svcConfig = spy(new ServiceConfiguration());
@@ -268,7 +269,7 @@ public class PersistentDispatcherFailoverConsumerTest {
 
     @Test
     public void testConsumerGroupChangesWithOldNewConsumers() throws Exception {
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentSubscription sub = new PersistentSubscription(topic, "sub-1", cursorMock, false);
 
         int partitionIndex = 0;
@@ -307,7 +308,7 @@ public class PersistentDispatcherFailoverConsumerTest {
     public void testAddRemoveConsumer() throws Exception {
         log.info("--- Starting PersistentDispatcherFailoverConsumerTest::testAddConsumer ---");
 
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentSubscription sub = new PersistentSubscription(topic, "sub-1", cursorMock, false);
 
         int partitionIndex = 4;
@@ -427,7 +428,7 @@ public class PersistentDispatcherFailoverConsumerTest {
     public void testAddRemoveConsumerNonPartitionedTopic() throws Exception {
         log.info("--- Starting PersistentDispatcherFailoverConsumerTest::testAddConsumer ---");
 
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentSubscription sub = new PersistentSubscription(topic, "sub-1", cursorMock, false);
 
         // Non partitioned topic.
@@ -487,7 +488,7 @@ public class PersistentDispatcherFailoverConsumerTest {
     @Test
     public void testMultipleDispatcherGetNextConsumerWithDifferentPriorityLevel() throws Exception {
 
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentDispatcherMultipleConsumers dispatcher = new PersistentDispatcherMultipleConsumers(topic, cursorMock, null);
         Consumer consumer1 = createConsumer(0, 2, false, 1);
         Consumer consumer2 = createConsumer(0, 2, false, 2);
@@ -531,7 +532,7 @@ public class PersistentDispatcherFailoverConsumerTest {
 
     @Test
     public void testFewBlockedConsumerSamePriority() throws Exception{
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentDispatcherMultipleConsumers dispatcher = new PersistentDispatcherMultipleConsumers(topic, cursorMock, null);
         Consumer consumer1 = createConsumer(0, 2, false, 1);
         Consumer consumer2 = createConsumer(0, 2, false, 2);
@@ -558,7 +559,7 @@ public class PersistentDispatcherFailoverConsumerTest {
 
     @Test
     public void testFewBlockedConsumerDifferentPriority() throws Exception {
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentDispatcherMultipleConsumers dispatcher = new PersistentDispatcherMultipleConsumers(topic, cursorMock, null);
         Consumer consumer1 = createConsumer(0, 2, false, 1);
         Consumer consumer2 = createConsumer(0, 2, false, 2);
@@ -612,7 +613,7 @@ public class PersistentDispatcherFailoverConsumerTest {
 
     @Test
     public void testFewBlockedConsumerDifferentPriority2() throws Exception {
-        PersistentTopic topic = new PersistentTopic(successTopicName, ledgerMock, brokerService);
+        PersistentTopic topic = new PersistentTopic(successTopicName + System.currentTimeMillis(), ledgerMock, brokerService);
         PersistentDispatcherMultipleConsumers dispatcher = new PersistentDispatcherMultipleConsumers(topic, cursorMock, null);
         Consumer consumer1 = createConsumer(0, 2, true, 1);
         Consumer consumer2 = createConsumer(0, 2, true, 2);
