@@ -108,6 +108,7 @@ public class PersistentDispatcherFailoverConsumerTest {
     final String successTopicName = "persistent://part-perf/global/perf.t1/ptopic";
     final String failTopicName = "persistent://part-perf/global/perf.t1/pfailTopic";
 
+
     @BeforeMethod
     public void setup() throws Exception {
         ServiceConfiguration svcConfig = spy(new ServiceConfiguration());
