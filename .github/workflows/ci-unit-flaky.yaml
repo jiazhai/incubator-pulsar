@@ -21,14 +21,14 @@ name: CI - Unit - Flaky
 on:
   pull_request:
     branches:
-      - master
+      - branch-2.5
     paths-ignore:
       - '**.md'
 
 jobs:
 
   unit-test-flaky:
-    name: 
+    name:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -48,7 +48,7 @@ jobs:
 
       - name: run unit tests
         run: mvn -B -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR install '-Dtest=PersistentTransactionBufferTest,PulsarFunctionE2ESecurityTest,ServerCnxTest,AdminApiOffloadTest,AdminApiSchemaValidationEnforced,V1_AdminApiTest2,ProxyPublishConsumeTlsTest,PulsarFunctionE2ETest,MessageIdSerialization,AdminApiTest2,PulsarFunctionLocalRunTest,PartitionedProducerConsumerTest,KafkaProducerSimpleConsumerTest,ProxyTest' -DfailIfNoTests=false
-          
+
       - name: package surefire artifacts
         if: failure()
         run: |
