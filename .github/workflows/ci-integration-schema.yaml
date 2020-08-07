@@ -87,4 +87,19 @@ jobs:
 
       - name: run integration tests
         if: steps.docs.outputs.changed_only == 'no'
-        run: ./build/retry.sh mvn -B -f tests/pom.xml test -DintegrationTestSuiteFile=pulsar-schema.xml -DintegrationTests -DredirectTestOutputToFile=false
+        run: ./build/retry.sh mvn -B -f tests/pom.xml test -DintegrationTestSuiteFile=pulsar-schema.xml -DintegrationTests -DredirectTestOutputToFile=true
+
+      - name: package surefire artifacts
+        if: failure()
+        run: |
+          rm -rf artifacts
+          mkdir artifacts
+          find . -type d -name "*surefire*" -exec cp --parents -R {} artifacts/ \;
+          zip -r artifacts.zip artifacts
+
+      - uses: actions/upload-artifact@master
+        name: upload surefire-artifacts
+        if: failure()
+        with:
+          name: surefire-artifacts
+          path: artifacts.zip
